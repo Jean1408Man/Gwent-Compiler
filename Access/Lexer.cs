@@ -43,7 +43,9 @@ public class Lexer {
 
 }
 
-public enum TokenType {
+public enum TokenType 
+{
+    LINECHANGE,
     WHITESPACE,
     SINGLECOMMENT,
     MULTICOMMENT,
@@ -52,7 +54,6 @@ public enum TokenType {
     COMA,
     POINTCOMA,
     ARROW,
-    NAME,
     PARAMS,
     NUMBER,
     ACTION,
@@ -107,6 +108,8 @@ public static class TokenTypeExtensions {
         switch (type) {
             case TokenType.WHITESPACE:
                 return @"\s+";
+            case TokenType.LINECHANGE:
+                return @"\n";
             case TokenType.SINGLECOMMENT:
                 return @"\/\/.*";
             case TokenType.MULTICOMMENT:
@@ -119,8 +122,7 @@ public static class TokenTypeExtensions {
                 return @"\,";
             case TokenType.ARROW:
                 return @"=>";
-            case TokenType.NAME:
-                return @"\b[a-zA-Z_][a-zA-Z_0-9]*\b";
+            
             case TokenType.PARAMS:
                 return @"\(([^)]*)\)";
             case TokenType.NUMBER:
