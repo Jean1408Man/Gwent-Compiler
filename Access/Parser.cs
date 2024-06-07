@@ -4,98 +4,105 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Compiler
+namespace Compiler;
+
+public class Parser
 {
-    public class Parser
+    public int position;
+    List<Token> tokens;
+    public bool Test= false|| true;
+    public Parser(List<Token> tokens)
     {
-        int position;
-        List<Token> tokens;
-        
-        // public Dictionary<TokenType, Expression> Gramatic= new Dictionary<TokenType, Expression>
-        // {
-        //     //Parseo de numero
-        //     {TokenType.NUMBER, NUMBER()},
-        //     //Luego de un id debe estar:
-
-        // };
-        
-        public Parser(List<Token> tokens)
-        {
-            position = 0;
-            this.tokens = tokens;
-        }
-        
-        #region Numerical Parser
-        // private Expression NUMBER()
-        // {
-        //      int limit= FindEndOfNumericExpression();
-        // }
-        
-        public int FindEndOfNumericExpression()
-        {
-            int pos = position;
-            int level = 0;
-
-            while (pos < tokens.Count)
-            {
-                Token token = tokens[pos];
-
-                if (token.Type == TokenType.NUMBER|| token.Type == TokenType.ID && tokens[pos-1].Type!=  TokenType.NUMBER && tokens[pos-1].Type!=  TokenType.ID)
-                {
-                    pos++;
-                    continue;
-                }
-
-                if (token.Type == TokenType.LPAREN)
-                {
-                    level++;
-                    pos++;
-                    continue;
-                }
-
-                if (token.Type == TokenType.RPAREN)
-                {
-                    if (level == 0)
-                        break;
-
-                    level--;
-                    pos++;
-                    continue;
-                    
-                }
-
-                if (level > 0)
-                {
-                    pos++;
-                    continue;
-                }
-                    if ((token.Type == TokenType.PLUS ||
-                        token.Type == TokenType.MINUS ||
-                        token.Type == TokenType.MULTIPLY ||
-                        token.Type == TokenType.DIVIDE ||
-                        token.Type == TokenType.POW)
-                        &&
-                        (tokens[pos-1].Type != TokenType.PLUS ||
-                        tokens[pos-1].Type != TokenType.MINUS||
-                        tokens[pos-1].Type != TokenType.MULTIPLY||
-                        tokens[pos-1].Type != TokenType.DIVIDE||
-                        tokens[pos-1].Type != TokenType.POW)
-                        )
-                    {
-                        pos++;
-                        continue;
-                    }
-                    break;
-                }
-
-                return pos - position;
-            }
-
-            
-        }
-        #endregion
-
-
-
-
+        position = 0;
+        this.tokens = tokens;
     }
+    private bool LookAhead(TokenType expectedTokenType)
+    {
+        if (position < tokens.Count)
+        {
+            return tokens[position].Type == expectedTokenType;
+        }
+        return false;
+    }
+    public Expression Parse()
+    {
+        var expression = ParseExpression();
+        return expression;
+    }
+    public Expression ParseExpression(int parentprecedence =0)
+    {
+        var left = ParsePrimaryExpression();
+
+        while (true)
+        {
+            var precedence = GetPrecedence(tokens[position].Type);
+            if(precedence==0|| precedence<= parentprecedence) 
+            break;
+            
+            var operatortoken = tokens[position++].Type;
+            var right = ParseExpression(precedence);
+            left = new BinaryOperator(left, right, operatortoken);
+        }
+        return left;
+    }
+    public Expression ParsePrimaryExpression()
+    {
+        if (position >= tokens.Count) throw new Exception("Unexpected end of input");
+        if (tokens[position].Type == TokenType.LPAREN)
+        {
+            position++;
+            Expression expr = ParseExpression(); // Asumiendo que ParseNumericalExpression maneja correctamente las expresiones entre paréntesis
+            if (tokens[position].Type!= TokenType.RPAREN)
+            {
+                throw new Exception("Missing closing parenthesis");
+            }
+            position++;
+            return expr;
+        }
+        // Comprueba si el siguiente token es un identificador
+        else if (tokens[position].Type == TokenType.ID)
+        {
+            position++; // Avanzamos al siguiente token después del identificador
+            // Creamos una nueva expresión de identificador usando el token actual
+            return new IdentifierExpression(tokens[position - 1]);
+        }
+        else if (tokens[position].Type == TokenType.INT)
+        {
+            position++;
+            return new Number(tokens[position - 1].Value);
+        }
+        else if (tokens[position].Type == TokenType.MINUS && (position == 0 || (tokens[position - 1].Type != TokenType.INT&& tokens[position - 1].Type != TokenType.ID)))
+        {
+            // Lógica existente para manejar el caso de un operador unario 
+            position++;
+            Expression operand = ParsePrimaryExpression();
+            return new BinaryOperator(new Number("0"), operand, tokens[position - 2].Type);
+        }
+        throw new Exception("Not recognizable primary token");
+    }
+    
+    public int GetPrecedence(TokenType type)
+    {
+        switch (type)
+        {
+            case TokenType.PLUS:
+            case TokenType.MINUS:
+            return 1;
+            case TokenType.MULTIPLY:
+            case TokenType.DIVIDE:
+            return 2;
+            case TokenType.POW:
+            return 3;            
+            default:
+            return 0;
+        }
+    }
+    
+}
+
+
+
+
+
+
+

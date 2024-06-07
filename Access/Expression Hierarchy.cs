@@ -2,57 +2,86 @@
 
  public abstract class Expression
  {
-     
+    public string? printed;
+    public virtual void Print(int indentLevel = 0)
+    {
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
  }
-public class Equal: Expression{
+public class Assignment: Expression{
     public Expression left;
     public Expression right;
-    public Equal(Expression left, Expression right)
+    public Assignment(Expression left, Expression right)
     {
         this.left = left;
         this.right = right;
     }
+    public override string ToString()
+    {
+        return "Hola";
+    }
 }
  #region Binary Operator
- public abstract class BinaryOperator : Expression
- {
-     public Expression? Left;
-     public Expression? Right;
-     public double result;
+public class BinaryOperator : Expression
+{
+    public Expression Left { get; set; }
+    public Expression Right { get; set; }
+    public TokenType Operator { get; set; }
 
-     public BinaryOperator(Expression? left, Expression? right)
-     {
-         Left = left;
-         Right = right;
-     }
- }
+    public BinaryOperator(Expression left, Expression right, TokenType Op)
+    {
+        Left = left;
+        Right = right;
+        Operator = Op;
+        this.printed = Op.ToString();
+    }
+}
+public class Terminal: Expression{public string? ValueForPrint;}
 
- public class Plus : BinaryOperator
- {
-     public Plus(Expression? left, Expression? right) : base(left, right) { }
- }
-     
- public class Minus : BinaryOperator
- {
-     public Minus(Expression? left, Expression? right) : base(left, right) { }
- }
+public class UnaryOperator : Expression
+{
+    public Expression Operand { get; set; }
+    public TokenType Operator { get; set; }
 
- public class Multiply : BinaryOperator
- {
-     public Multiply(Expression? left, Expression? right) : base(left, right) { }
- }
+    public UnaryOperator(Expression operand, TokenType Op)
+    {
+        Operand = operand;
+        Operator = Op;
+    }
+}
+public class Number: Terminal
+{
+    public Number(string value)
+    {
+        this.ValueForPrint = value;
+        this.printed = "Number";
+    }
+}
+public class BooleanLiteral : Terminal
+{
+    public bool Value { get; }
 
- public class Divide : BinaryOperator
- {
-    public Divide(Expression? left, Expression? right) : base(left, right) { }
- }
- public class Pow : BinaryOperator
- {
-    public Pow(Expression? left, Expression? right) : base(left, right) { }
- }
- public class Number: Expression{
-    int value;
- }
-
+    public BooleanLiteral(TokenType token)
+    {
+        if(TokenType.TRUE== token)
+            Value = true;
+        else if(TokenType.FALSE== token)
+            Value = false;
+        else
+            throw new Exception("Invalid boolean literal");
+        this.printed = Value? "true" : "false";
+    }
+}
 
  #endregion
+
+public class IdentifierExpression : Terminal
+{
+    public IdentifierExpression(Token token)
+    {
+        this.printed = "ID"; // O alguna otra forma de representar el identificador visualmente
+        this.ValueForPrint = token.Value;
+    }
+}
+
+

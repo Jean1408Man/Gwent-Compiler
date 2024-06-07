@@ -17,6 +17,8 @@ public class Lexer {
 
     public List<Token> Tokenize() 
     {
+        int fila=0;
+        int columna =0;
         while (input.Length!=0) 
         {
                 bool isfound = false;
@@ -25,11 +27,17 @@ public class Lexer {
                     Match match = Regex.Match(input,"^"+ pattern); // Cambio aquí
                     if (match.Success) 
                     {
-                        if(type!= TokenType.WHITESPACE){
-                        Token token = new Token(type, match.Value);
+                        if(type!= TokenType.WHITESPACE && type!= TokenType.LINECHANGE){
+                        Token token = new Token(type, match.Value, (fila,columna));
                         tokens.Add(token);
                         }
+                        if(type== TokenType.LINECHANGE)
+                        {
+                            fila++;
+                            columna=0;
+                        }
                         input= input.Substring(match.Value.Length); // Actualizo la posición
+                        columna+= match.Value.Length;
                         isfound = true;
                         break;
                     }
@@ -86,6 +94,8 @@ public enum TokenType
     EQUAL,
     LESS_EQ,
     MORE_EQ,
+    FALSE,
+    TRUE,
     SPACE_CONCATENATION,
     CONCATENATION,
     ASSIGN,
@@ -95,7 +105,6 @@ public enum TokenType
     RBRACKET,
     LCURLY,
     RCURLY,
-    BOOLEAN,
     INT,
     STRING,
     ID,
@@ -109,7 +118,7 @@ public static class TokenTypeExtensions {
             case TokenType.WHITESPACE:
                 return @"\s+";
             case TokenType.LINECHANGE:
-                return @"\n";
+                return @"\\n";
             case TokenType.SINGLECOMMENT:
                 return @"\/\/.*";
             case TokenType.MULTICOMMENT:
@@ -124,9 +133,9 @@ public static class TokenTypeExtensions {
                 return @"=>";
             
             case TokenType.PARAMS:
-                return @"\(([^)]*)\)";
+                return @"\bParams\b";
             case TokenType.NUMBER:
-                return @"\b\d+(\.\d+)?\b";
+                return @"\bNumber\b";
             case TokenType.ACTION:
                 return @"\b[action|draw|discard|play]\b";
             case TokenType.CONTEXT:
@@ -152,6 +161,10 @@ public static class TokenTypeExtensions {
                 return @"\bEffect\b";
             case TokenType.CARD:
                 return @"\bcard\b";
+            case TokenType.TRUE:
+                return @"\btrue\b";
+            case TokenType.FALSE:
+                return @"\bfalse\b";
             case TokenType.IF:
                 return @"\bif\b";
             case TokenType.ELIF:
@@ -205,8 +218,6 @@ public static class TokenTypeExtensions {
                 return @"\{";
             case TokenType.RCURLY:
                 return @"\}";
-            case TokenType.BOOLEAN:
-                return @"\b(true|false)\b";
             case TokenType.INT:
                 return @"\b\d+\b";
             case TokenType.STRING:
