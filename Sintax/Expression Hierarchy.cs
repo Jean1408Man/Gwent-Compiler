@@ -36,7 +36,16 @@ public class BinaryOperator : Expression
         this.printed = Op.ToString();
     }
 }
-public class Terminal: Expression{public string? ValueForPrint;}
+public class Terminal: Expression
+{
+    public string? ValueForPrint;
+    public Token Value { get; }
+    public Terminal(Token token)
+    {
+        this.ValueForPrint = token.Value;
+        Value= token;
+    }
+}
 
 public class UnaryOperator : Expression
 {
@@ -51,25 +60,18 @@ public class UnaryOperator : Expression
 }
 public class Number: Terminal
 {
-    public Number(string value)
+    public Number(Token token): base(token)
     {
-        this.ValueForPrint = value;
-        this.printed = "Number";
+        this.printed= "Number";
     }
 }
 public class BooleanLiteral : Terminal
 {
-    public bool Value { get; }
+    
 
-    public BooleanLiteral(TokenType token)
+    public BooleanLiteral(Token token): base(token)
     {
-        if(TokenType.TRUE== token)
-            Value = true;
-        else if(TokenType.FALSE== token)
-            Value = false;
-        else
-            throw new Exception("Invalid boolean literal");
-        this.printed = Value? "true" : "false";
+        this.printed = "Boolean";
     }
 }
 
@@ -77,10 +79,9 @@ public class BooleanLiteral : Terminal
 
 public class IdentifierExpression : Terminal
 {
-    public IdentifierExpression(Token token)
+    public IdentifierExpression(Token token):base(token)
     {
         this.printed = "ID"; // O alguna otra forma de representar el identificador visualmente
-        this.ValueForPrint = token.Value;
     }
 }
 

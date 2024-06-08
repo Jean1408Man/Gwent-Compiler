@@ -18,7 +18,7 @@ public class Lexer {
     public List<Token> Tokenize() 
     {
         int fila=0;
-        int columna =0;
+        int columna =1;
         while (input.Length!=0) 
         {
                 bool isfound = false;
@@ -116,9 +116,9 @@ public static class TokenTypeExtensions {
     public static string GetPattern(this TokenType type) {
         switch (type) {
             case TokenType.WHITESPACE:
-                return @"\s+";
+                return @"[\s+|\n]";
             case TokenType.LINECHANGE:
-                return @"\\n";
+                return @"\r";
             case TokenType.SINGLECOMMENT:
                 return @"\/\/.*";
             case TokenType.MULTICOMMENT:

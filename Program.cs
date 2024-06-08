@@ -13,7 +13,6 @@ namespace Compiler
             {
                 string filePath = @"D:\Priv\Proyecto UH\2doProyecto\Gwent-Compiler\Input.txt";
                 string text = File.ReadAllText(filePath);
-                text += "\n";
                 Lexer l = new Lexer(text);
                 List<Token> tokens = l.Tokenize();
                 Console.WriteLine(text);

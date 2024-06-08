@@ -35,7 +35,7 @@ public class Parser
 
         while (true)
         {
-            var precedence = GetPrecedence(tokens[position].Type);
+            var precedence = SintaxFacts.GetPrecedence(tokens[position].Type);
             if(precedence==0|| precedence<= parentprecedence) 
             break;
             
@@ -69,34 +69,20 @@ public class Parser
         else if (tokens[position].Type == TokenType.INT)
         {
             position++;
-            return new Number(tokens[position - 1].Value);
+            return new Number(tokens[position - 1]);
         }
         else if (tokens[position].Type == TokenType.MINUS && (position == 0 || (tokens[position - 1].Type != TokenType.INT&& tokens[position - 1].Type != TokenType.ID)))
         {
             // Lógica existente para manejar el caso de un operador unario 
+            TokenType unary = tokens[position].Type;
             position++;
-            Expression operand = ParsePrimaryExpression();
-            return new BinaryOperator(new Number("0"), operand, tokens[position - 2].Type);
+            Expression operand = ParseExpression();
+            return new BinaryOperator(new Number(SintaxFacts.NullNumberToken), operand, unary);
         }
         throw new Exception("Not recognizable primary token");
     }
     
-    public int GetPrecedence(TokenType type)
-    {
-        switch (type)
-        {
-            case TokenType.PLUS:
-            case TokenType.MINUS:
-            return 1;
-            case TokenType.MULTIPLY:
-            case TokenType.DIVIDE:
-            return 2;
-            case TokenType.POW:
-            return 3;            
-            default:
-            return 0;
-        }
-    }
+    
     
 }
 
