@@ -7,21 +7,119 @@
     {
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
+    public abstract object Evaluate();
  }
-public class Assignment: Expression{
-    public Expression left;
-    public Expression right;
-    public Assignment(Expression left, Expression right)
+public class ProgramExpression: Expression
+{
+    public List<EffectDeclarationExpr> Effects;
+    public List<CardExpression> Cards;
+    public ProgramExpression()
     {
-        this.left = left;
-        this.right = right;
+        Effects= new();
+        Cards= new();
+        printed = "Program";
     }
-    public override string ToString()
+    public override object Evaluate()
     {
-        return "Hola";
+        throw new NotImplementedException();
     }
 }
- #region Binary Operator
+#region Effect Expressions and associated
+public class EffectDeclarationExpr: Expression
+{
+    public Expression? Name;
+    public List<Expression>? Params;
+    public Expression? Action;
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "Effect";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+public class InstructionBlock: Expression
+{
+    public List<Expression>? Instruccions;
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "Instruction Block";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+public class ActionExpression: Expression
+{
+    public InstructionBlock? Instructions;
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "Action";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+public class ForExpression: Expression
+{
+    public InstructionBlock? Instructions;
+    public IdentifierExpression? Variable;
+    public IdentifierExpression? Collection;
+
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "For";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+public class WhileExpression: Expression
+{
+    public InstructionBlock? Instructions;
+    public Expression? Condition;
+
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "While";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+#endregion
+public class CardExpression: Expression
+{
+    public Expression? Name;
+    public Expression? Type;
+    public Expression? Effect;
+    public Expression? Faction;
+    public Expression? Power;
+    public List<Expression>? Range;
+    public Expression? OnActivation;
+
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "Card";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+
+#region FirstExpressions
 public class BinaryOperator : Expression
 {
     public Expression Left { get; set; }
@@ -35,6 +133,46 @@ public class BinaryOperator : Expression
         Operator = Op;
         this.printed = Op.ToString();
     }
+    public override object Evaluate()
+    {
+        switch(Operator)
+        {
+            // Math
+            case TokenType.PLUS:
+            return (double)Left.Evaluate() + (double)Right.Evaluate();
+            case TokenType.MINUS:
+            return (double)Left.Evaluate() - (double)Right.Evaluate();
+            case TokenType.MULTIPLY:
+            return (double)Left.Evaluate() * (double)Right.Evaluate();
+            case TokenType.DIVIDE:
+            return (double)Left.Evaluate() / (double)Right.Evaluate();
+            case TokenType.POW:
+            return Math.Pow((double)Left.Evaluate(), (double)Right.Evaluate());
+            // Booleans
+            case TokenType.EQUAL:
+            return SintaxFacts.EqualTerm(Left.Evaluate(), Right.Evaluate());
+            case TokenType.LESS_EQ:
+            return (double)Left.Evaluate() <= (double)Right.Evaluate();
+            case TokenType.MORE_EQ:
+            return (double)Left.Evaluate() >= (double)Right.Evaluate();
+            case TokenType.MORE:
+            return (double)Left.Evaluate() > (double)Right.Evaluate();
+            case TokenType.LESS:
+            return (double)Left.Evaluate() < (double)Right.Evaluate();
+            case TokenType.AND:
+            return (bool)Left.Evaluate() && (bool)Right.Evaluate();
+            case TokenType.OR:
+            return (bool)Left.Evaluate() || (bool)Right.Evaluate();
+            // String
+            case TokenType.CONCATENATION:
+            return (string)Left.Evaluate() + (string)Right.Evaluate();
+            case TokenType.SPACE_CONCATENATION:
+            return (string)Left.Evaluate() +" "+ (string)Right.Evaluate();
+            //...
+            default:
+            throw new Exception("Invalid Operator");
+        }
+    }
 }
 public class Terminal: Expression
 {
@@ -45,10 +183,14 @@ public class Terminal: Expression
         this.ValueForPrint = token.Value;
         Value= token;
     }
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public class UnaryOperator : Expression
-{
+{//Functions are included into Unary Operators because at the moment they only have one parameter
     public Expression Operand { get; set; }
     public TokenType Operator { get; set; }
 
@@ -57,6 +199,16 @@ public class UnaryOperator : Expression
         Operand = operand;
         Operator = Op;
     }
+    public override object Evaluate()
+    {
+        switch(Operator)
+        {
+            case TokenType.NOT:
+                return !(bool)Operand.Evaluate();
+            default:
+            throw new Exception("Unknown unary operator");
+        }
+    }
 }
 public class Number: Terminal
 {
@@ -64,18 +216,24 @@ public class Number: Terminal
     {
         this.printed= "Number";
     }
+    public override object Evaluate()
+    {
+        return Convert.ToDouble(Value.Value);
+    }
 }
 public class BooleanLiteral : Terminal
 {
-    
-
     public BooleanLiteral(Token token): base(token)
     {
         this.printed = "Boolean";
     }
+    public override object Evaluate()
+    {
+        return Convert.ToBoolean(Value.Value);
+    }
 }
 
- #endregion
+ 
 
 public class IdentifierExpression : Terminal
 {
@@ -84,5 +242,17 @@ public class IdentifierExpression : Terminal
         this.printed = "ID"; // O alguna otra forma de representar el identificador visualmente
     }
 }
+public class StringExpression : Terminal
+{
+    public StringExpression(Token token):base(token)
+    {
+        this.printed = "STRING"; // O alguna otra forma de representar el identificador visualmente
+    }
+    public override object Evaluate()
+    {
+        return Value.Value.Substring(1,Value.Value.Length-2);
+    }
+}
+#endregion
 
 

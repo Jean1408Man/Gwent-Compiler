@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text.RegularExpressions;
-namespace Compiler
-{
-    
+namespace Compiler;
 
 public class Lexer {
     private string input;
@@ -14,18 +12,125 @@ public class Lexer {
         this.input = input;
         this.tokens = new List<Token>();
     }
+    private Dictionary<TokenType, string> TokenPatterns = new Dictionary<TokenType, string>
+    {
+        // Keywords
+        { TokenType.EFFECTDECLARATION, @"\beffect\b" },
+        { TokenType.CARD, @"\bcard\b" },
+        { TokenType.NAME, @"\bName\b" },
+        { TokenType.PARAMS, @"\bParams\b" },
+        { TokenType.ACTION, @"\bAction\b" },
+        { TokenType.TYPE, @"\bType\b" },
+        { TokenType.FACTION, @"\bFaction\b" },
+        { TokenType.POWER, @"\bPower\b" },
+        { TokenType.RANGE, @"\bRange\b" },
+        { TokenType.ONACTIVATION, @"\bOnActivation\b" },
+        { TokenType.EFFECTASSIGNMENT, @"\bEffect\b" },
+        { TokenType.SELECTOR, @"\bSelector\b" },
+        { TokenType.POSTACTION, @"\bPostAction\b" },
+        { TokenType.SOURCE, @"\bSource\b" },
+        { TokenType.SINGLE, @"\bSingle\b" },
+        { TokenType.PREDICATE, @"\bPredicate\b" },
+        { TokenType.FOR, @"\bfor\b" },
+        { TokenType.IN, @"\bin\b" },
+        { TokenType.WHILE, @"\bwhile\b" },
+        { TokenType.HAND, @"\bhand\b" },
+        { TokenType.DECK, @"\bdeck\b" },
+        { TokenType.BOARD, @"\bboard\b" },
+        { TokenType.TARGETS, @"\btargets\b" },
+        { TokenType.CONTEXT, @"\bcontext\b" },
+        { TokenType.TRUE, @"\btrue\b" },
+        { TokenType.FALSE, @"\bfalse\b" },
+        { TokenType.TRIGGERPLAYER, @"\bTriggerPlayer\b" },
+        { TokenType.DECKOFPLAYER, @"\bDeckOfPlayer\b" },
+        { TokenType.HANDOFPLAYER, @"\bHandOfPlayer\b" },
+        { TokenType.GRAVEYARDOFPLAYER, @"\bBoardOfPlayer\b" },
+        { TokenType.FIELDOFPLAYER, @"\bFieldOfPlayer\b" },
+        { TokenType.FIND, @"\bFind\b" },
+        { TokenType.PUSH, @"\bPush\b" },
+        { TokenType.SENDBOTTOM, @"\bSendBottom\b" },
+        { TokenType.POP, @"\bPop\b" },
+        { TokenType.REMOVE, @"\bRemove\b" },
+        { TokenType.SHUFFLE, @"\bShuffle\b" },
+        { TokenType.OWNER, @"\bOwner\b" },
+        
+        // Data Types
+        { TokenType.NUMBERTYPE, @"\bNumber\b" },
+        { TokenType.STRINGTYPE, @"\bString\b" },
+
+        // Symbols
+        { TokenType.LPAREN, @"\(" },
+        { TokenType.RPAREN, @"\)" },
+        { TokenType.LCURLY, @"\{" },
+        { TokenType.RCURLY, @"\}" },
+        { TokenType.LBRACKET, @"\[" },
+        { TokenType.RBRACKET, @"\]" },
+        { TokenType.TWOPOINT, @"\:" },
+        { TokenType.COMA, @"\," },
+        { TokenType.POINTCOMA, @"\;" },
+        { TokenType.POINT, @"\." },
+        { TokenType.ARROW, @"\=\>" },
+        { TokenType.ASSIGN, @"\=" },
+        
+        //MathOperator
+        { TokenType.PLUSACCUM, @"\+\=" },
+        { TokenType.MINUSACCUM, @"\-\=" },
+        { TokenType.INCREEMENT, @"\+\+" },
+        { TokenType.DECREMENT, @"\-\-" },
+        { TokenType.PLUS, @"\+" },
+        { TokenType.MINUS, @"\-" },
+        { TokenType.MULTIPLY, @"\*" },
+        { TokenType.DIVIDE, @"\/" },
+        { TokenType.POW, @"\^" },
+        
+
+        // Identifiers
+        { TokenType.ID, @"[a-zA-Z_][\w]*" },
+
+        // Numbers
+        { TokenType.INT, @"\b\d+\b" },
+
+        // Strings (double-quoted)
+        { TokenType.STRING, @"""[^""]*""" },
+        { TokenType.SPACE_CONCATENATION, @"@@" },
+        { TokenType.CONCATENATION, @"@" },
+
+        // Booleans
+        { TokenType.NOT, @"!" },
+        { TokenType.AND, @"&&" },
+        { TokenType.OR, @"\|\|"},
+        { TokenType.EQUAL, @"==" },
+        { TokenType.NOTEQUAL, @"!=" },
+        { TokenType.LESS, @"<" }, 
+        { TokenType.MORE, @">" },
+        { TokenType.LESS_EQ, @"<=" },
+        { TokenType.MORE_EQ, @">=" },
+
+        // Whitespace
+        { TokenType.WHITESPACE, "[ \t\r\n]" },
+        { TokenType.LINECHANGE, @"\r" },
+
+        // Comments
+        { TokenType.SINGLECOMMENT, @"//[^\n]*" },
+        { TokenType.MULTICOMMENT, @"/\*.*?\*/" }
+    };
 
     public List<Token> Tokenize() 
     {
         int fila=0;
-        int columna =1;
+        int columna =0;
         while (input.Length!=0) 
         {
                 bool isfound = false;
-                foreach (TokenType type in Enum.GetValues(typeof(TokenType))) {
-                    string pattern = type.GetPattern();
+                foreach (TokenType type in Enum.GetValues(typeof(TokenType))){
+                    
+                    string pattern = TokenPatterns[type];
                     Match match = Regex.Match(input,"^"+ pattern); // Cambio aquí
-                    if (match.Success) 
+                    if(match==null)
+                    {
+
+                    }
+                    if (match!.Success)
                     {
                         if(type!= TokenType.WHITESPACE && type!= TokenType.LINECHANGE){
                         Token token = new Token(type, match.Value, (fila,columna));
@@ -50,189 +155,87 @@ public class Lexer {
     }
 
 }
-
-public enum TokenType 
+public enum TokenType
 {
-    LINECHANGE,
     WHITESPACE,
     SINGLECOMMENT,
     MULTICOMMENT,
+    INCREEMENT,
+    DECREMENT,
+    PLUSACCUM,
+    MINUSACCUM,
+    LINECHANGE,
+    EFFECTDECLARATION,
+    SPACE_CONCATENATION,
+    CONCATENATION,
+    CARD,
+    NAME,
+    PARAMS,
+    ACTION,
+    TYPE,
+    FACTION,
+    POWER,
+    RANGE,
+    ONACTIVATION,
+    EFFECTASSIGNMENT,
+    SELECTOR,
+    POSTACTION,
+    SOURCE,
+    SINGLE,
+    PREDICATE,
+    FOR,
+    IN,
+    WHILE,
+    HAND,
+    OWNER,
+    DECK,
+    HANDOFPLAYER,
+    DECKOFPLAYER,
+    FIELDOFPLAYER,
+    GRAVEYARDOFPLAYER,
+    BOARD,
+    CONTEXT,
+    TARGETS,
+    TRUE,
+    FALSE,
+    TRIGGERPLAYER,
+    FIND,
+    PUSH,
+    SENDBOTTOM,
+    POP,
+    REMOVE,
+    SHUFFLE,
+    NUMBERTYPE,
+    STRINGTYPE,
+    LPAREN,
+    RPAREN,
+    LCURLY,
+    RCURLY,
+    LBRACKET,
+    RBRACKET,
     POINT,
     TWOPOINT,
     COMA,
     POINTCOMA,
     ARROW,
-    PARAMS,
-    NUMBER,
-    ACTION,
-    CONTEXT,
-    POWER,
-    DECK,
-    HAND,
-    POP,
-    SHUFFLE,
     
-    FOR,
-    WHILE,
-    EFFECTDECLARATION,
-    EFFECTASSIGNMENT,
-    CARD,
-    IF,
-    ELIF,
-    ELSE,
-    POW,
-    INCREMENT,
-    DECREMENT,
     PLUS,
+    POW,
     MINUS,
     MULTIPLY,
     DIVIDE,
-    AND,
-    OR,
-    LESS,
-    MORE,
-    EQUAL,
-    LESS_EQ,
-    MORE_EQ,
-    FALSE,
-    TRUE,
-    SPACE_CONCATENATION,
-    CONCATENATION,
-    ASSIGN,
-    LPAREN,
-    RPAREN,
-    LBRACKET,
-    RBRACKET,
-    LCURLY,
-    RCURLY,
+    
     INT,
     STRING,
+    AND,
+    OR,
+    LESS_EQ,
+    MORE_EQ,
+    EQUAL,
+    ASSIGN,
+    NOT,
+    NOTEQUAL,
+    LESS,
+    MORE,
     ID,
-    NOT, 
-    NOTEQUAL, 
-}
-
-public static class TokenTypeExtensions {
-    public static string GetPattern(this TokenType type) {
-        switch (type) {
-            case TokenType.WHITESPACE:
-                return @"[\s+|\n]";
-            case TokenType.LINECHANGE:
-                return @"\r";
-            case TokenType.SINGLECOMMENT:
-                return @"\/\/.*";
-            case TokenType.MULTICOMMENT:
-                return @"(?s)/\*.*?\*/";
-            case TokenType.POINT:
-                return @"\.";
-            case TokenType.POINTCOMA:
-                return @"\;";
-            case TokenType.COMA:
-                return @"\,";
-            case TokenType.ARROW:
-                return @"=>";
-            
-            case TokenType.PARAMS:
-                return @"\bParams\b";
-            case TokenType.NUMBER:
-                return @"\bNumber\b";
-            case TokenType.ACTION:
-                return @"\b[action|draw|discard|play]\b";
-            case TokenType.CONTEXT:
-                return @"\bcontext\b";
-            case TokenType.POWER:
-                return @"\bPower\b";
-            case TokenType.DECK:
-                return @"\bDeck\b";
-            case TokenType.HAND:
-                return @"\bHand\b";
-            case TokenType.POP:
-                return @"\bPop\b";
-            case TokenType.SHUFFLE:
-                return @"\bShuffle\b";
-            
-            case TokenType.FOR:
-                return @"\bfor\b";
-            case TokenType.WHILE:
-                return @"\bwhile\b";
-            case TokenType.EFFECTDECLARATION:
-                return @"\beffect\b";
-                case TokenType.EFFECTASSIGNMENT:
-                return @"\bEffect\b";
-            case TokenType.CARD:
-                return @"\bcard\b";
-            case TokenType.TRUE:
-                return @"\btrue\b";
-            case TokenType.FALSE:
-                return @"\bfalse\b";
-            case TokenType.IF:
-                return @"\bif\b";
-            case TokenType.ELIF:
-                return @"\belif\b";
-            case TokenType.ELSE:
-                return @"\belse\b";
-            case TokenType.POW:
-                return @"\^";
-            case TokenType.INCREMENT:
-                return @"\+\+";
-            case TokenType.DECREMENT:
-                return @"\-\-";
-            case TokenType.MULTIPLY:
-                return @"\*";
-            case TokenType.DIVIDE:
-                return @"\/";
-            case TokenType.PLUS:
-                return @"\+";
-            case TokenType.MINUS:
-                return @"\-";
-            case TokenType.AND:
-                return @"\&\&";
-            case TokenType.OR:
-                return @"\|\|";
-            
-            case TokenType.LESS:
-                return "<";
-            case TokenType.MORE:
-                return ">";
-            case TokenType.EQUAL:
-                return "==";
-            case TokenType.LESS_EQ:
-                return "<=";
-            case TokenType.MORE_EQ:
-                return ">=";
-            case TokenType.SPACE_CONCATENATION:
-                return "@@";
-            case TokenType.CONCATENATION:
-                return "@";
-            case TokenType.ASSIGN:
-                return "=";
-            case TokenType.LPAREN:
-                return @"\(";
-            case TokenType.RPAREN:
-                return @"\)";
-            case TokenType.LBRACKET:
-                return @"\[";
-            case TokenType.RBRACKET:
-                return @"\]";
-            case TokenType.LCURLY:
-                return @"\{";
-            case TokenType.RCURLY:
-                return @"\}";
-            case TokenType.INT:
-                return @"\b\d+\b";
-            case TokenType.STRING:
-                return "\".*?\"";
-            case TokenType.ID:
-                return @"\b[A-Za-z_][A-Za-z_0-9]*\b";
-            case TokenType.TWOPOINT:
-                return @"\:";
-            case TokenType.NOT:
-                return @"\!";
-            case TokenType.NOTEQUAL:
-                return @"!=";
-            default:
-                throw new ArgumentException("Invalid token type");
-        }
-    }
-}
 }

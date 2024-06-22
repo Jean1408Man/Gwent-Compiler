@@ -1,18 +1,20 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Priv\\Proyecto UH\\2doProyecto\\",
+  "WorkspaceRootPath": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|d:\\priv\\proyecto uh\\2doproyecto\\lexer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|solutionrelative:lexer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|d:\\priv\\proyecto uh\\2doproyecto\\gwent-compiler\\sintax\\parser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|solutionrelative:sintax\\parser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|d:\\priv\\proyecto uh\\2doproyecto\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Priv\\Proyecto UH\\2doProyecto\\Lexer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|d:\\priv\\proyecto uh\\2doproyecto\\gwent-compiler\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|d:\\priv\\proyecto uh\\2doproyecto\\token.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{52A4C62E-2C38-44B1-9E9C-23C939E9BCE2}|2doProyecto.csproj|solutionrelative:token.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Priv\\Proyecto UH\\2doProyecto\\Token.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,46 +24,55 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "Parser.cs",
+              "DocumentMoniker": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\Sintax\\Parser.cs",
+              "RelativeDocumentMoniker": "Sintax\\Parser.cs",
+              "ToolTip": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\Sintax\\Parser.cs*",
+              "RelativeToolTip": "Sintax\\Parser.cs*",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAGkAAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-09T14:55:56.584Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Token.cs",
               "DocumentMoniker": "D:\\Priv\\Proyecto UH\\2doProyecto\\Token.cs",
-              "RelativeDocumentMoniker": "Token.cs",
+              "RelativeDocumentMoniker": "..\\Token.cs",
               "ToolTip": "D:\\Priv\\Proyecto UH\\2doProyecto\\Token.cs",
-              "RelativeToolTip": "Token.cs",
+              "RelativeToolTip": "..\\Token.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-29T19:09:24.322Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-29T19:09:24.322Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABEAAAAwAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-29T19:09:22.699Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\Priv\\Proyecto UH\\2doProyecto\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "D:\\Priv\\Proyecto UH\\2doProyecto\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAABEAAAAwAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-29T19:09:22.699Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
               "Title": "Lexer.cs",
               "DocumentMoniker": "D:\\Priv\\Proyecto UH\\2doProyecto\\Lexer.cs",
-              "RelativeDocumentMoniker": "Lexer.cs",
+              "RelativeDocumentMoniker": "..\\Lexer.cs",
               "ToolTip": "D:\\Priv\\Proyecto UH\\2doProyecto\\Lexer.cs",
-              "RelativeToolTip": "Lexer.cs",
-              "ViewState": "AQIAABAAAAAAAAAAAAAgwCQAAAAaAAAA",
+              "RelativeToolTip": "..\\Lexer.cs",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-29T19:09:17.159Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-29T19:09:17.159Z"
             }
           ]
         }
