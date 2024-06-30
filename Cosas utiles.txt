@@ -1,5 +1,6 @@
 Cosas pendientes:
-- Parseo de while
-- Diminutivos Hand etc
-- Añadir Add como metodo en los elementos que devuelven listas
-- Manejo de ID a modo de asignacion y de uso de variable
+- Parseo de incrementos
+- Indexado en listas
+- Boolean type assignment
+- Preguntar si pasan dos Name da error
+- Agregar cosas en Lexer

@@ -6,6 +6,8 @@
     <RootNamespace>_2doProyecto</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);1591;618</NoWarn>
   </PropertyGroup>
+   
 
 </Project>

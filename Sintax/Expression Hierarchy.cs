@@ -42,7 +42,7 @@ public class EffectDeclarationExpr: Expression
 }
 public class InstructionBlock: Expression
 {
-    public List<Expression>? Instruccions;
+    public List<Expression>? Instructions= new();
     public override object Evaluate()
     {
         throw new NotImplementedException();
@@ -55,6 +55,8 @@ public class InstructionBlock: Expression
 }
 public class ActionExpression: Expression
 {
+    public IdentifierExpression? Targets;
+    public IdentifierExpression? Context;
     public InstructionBlock? Instructions;
     public override object Evaluate()
     {
@@ -68,7 +70,7 @@ public class ActionExpression: Expression
 }
 public class ForExpression: Expression
 {
-    public InstructionBlock? Instructions;
+    public InstructionBlock? Instructions= new();
     public IdentifierExpression? Variable;
     public IdentifierExpression? Collection;
 
@@ -84,7 +86,7 @@ public class ForExpression: Expression
 }
 public class WhileExpression: Expression
 {
-    public InstructionBlock? Instructions;
+    public InstructionBlock? Instructions= new();
     public Expression? Condition;
 
     public override object Evaluate()
@@ -97,7 +99,20 @@ public class WhileExpression: Expression
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
 }
+
 #endregion
+
+
+
+
+
+
+
+
+
+
+
+#region Cards Expressions and associated
 public class CardExpression: Expression
 {
     public Expression? Name;
@@ -106,7 +121,7 @@ public class CardExpression: Expression
     public Expression? Faction;
     public Expression? Power;
     public List<Expression>? Range;
-    public Expression? OnActivation;
+    public OnActivationExpression? OnActivation;
 
     public override object Evaluate()
     {
@@ -118,6 +133,71 @@ public class CardExpression: Expression
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
 }
+public class PredicateExp: Expression
+{
+    public IdentifierExpression? Unit;
+    public Expression? Condition;
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+}
+public class OnActivationExpression: Expression
+{
+    public List<EffectAssignment>? Effects= new();
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "OnActivacion";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+public class EffectAssignment: Expression
+{
+    public List<Expression>? Effect = new();
+    public SelectorExpression? Selector;
+    public EffectAssignment? PostAction;
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "OnActivacion";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+public class SelectorExpression: Expression
+{
+    public Expression? Source;
+    public Expression? Single;
+    public Expression? Predicate;
+    public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override void Print(int indentLevel = 0)
+    {
+        printed = "Selector";
+        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+    }
+}
+
+
+#endregion
+
+
+
+
+
+
+
+
+
+
 
 #region FirstExpressions
 public class BinaryOperator : Expression

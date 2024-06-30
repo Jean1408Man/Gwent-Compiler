@@ -1,21 +1,14 @@
-effect 
-{
-    Name: "Juana" @@ "Y su hermana",
-    Action : 
+effect {
+    Name: "Damage",
+    Params: {
+        Amount: Number
+    },
+    Action: (targets, context) => {
+        for target in targets {
+            i = 0;
+            while (i+1 < Amount)
+                target.Power+=1;
+        };
+    }
 }
-effect
-{
-    Name  : 17 =,
-    Params: 
-    {
-        Juana = Number,
-        Pedro = String,
-    };
-}
-card
-{
-    Name: "19",
-    Type : "Golden",
-    Faction : "Northern Realms",
-    Range : ["Mel" @ "ee", "Rachel"],
-}
+
