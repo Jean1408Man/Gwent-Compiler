@@ -2,11 +2,15 @@
 
  public abstract class Expression
  {
+    public ValueType? Type;
+    public object? Value;
+    public Scope? Scope; 
     public string? printed;
     public virtual void Print(int indentLevel = 0)
     {
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
+    public abstract ValueType? Semantic(Scope scope);
     public abstract object Evaluate();
  }
 public class ProgramExpression: Expression
@@ -267,6 +271,10 @@ public class Terminal: Expression
     {
         throw new NotImplementedException();
     }
+    public override ValueType Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public class UnaryOperator : Expression
@@ -321,6 +329,11 @@ public class IdentifierExpression : Terminal
     {
         this.printed = "ID"; // O alguna otra forma de representar el identificador visualmente
     }
+    public override ValueType Semantic(Scope scope)
+    {
+        Type = null;
+    }
+
 }
 public class StringExpression : Terminal
 {
@@ -331,6 +344,12 @@ public class StringExpression : Terminal
     public override object Evaluate()
     {
         return Value.Value.Substring(1,Value.Value.Length-2);
+    }
+    public override ValueType? Semantic(Scope scope)
+    {
+        this.Scope = scope;
+        Type = ValueType.String;
+        return Type;
     }
 }
 #endregion

@@ -56,4 +56,44 @@ public static class SintaxFacts
             return 0;
         }
     }
+
+}
+public enum ValueType
+{
+    Number,
+    String,
+    Boolean,
+    Card,
+    ListCard,
+    Context,
+}
+public class Scope
+{
+    public Scope parentScope;
+    private Dictionary< string , Expression > Variables;
+
+    public bool Find(IdentifierExpression exp, out ValueType? type)
+    {
+        bool finder= false;
+        if(Variables.ContainsKey(exp.Value.Value))
+        {
+            if(Variables[exp.Value.Value]!= null)
+                type = exp.Type;
+            else
+                type=null;
+            finder=true;
+        }
+        else
+            type=null;
+        if(!finder && parentScope!=null)
+        {
+            return parentScope.Find(exp, out type);
+        }
+        else
+        return finder;
+    }
+    public void AddVar(string name, Expression Value)
+    {
+        Variables.Add(name, Value);
+    }
 }
