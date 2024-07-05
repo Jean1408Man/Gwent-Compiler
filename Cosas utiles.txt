@@ -4,3 +4,16 @@ Cosas pendientes:
 - Boolean type assignment
 - Preguntar si pasan dos Name da error
 - Agregar cosas en Lexer
+
+
+Operaciones Unarias:
+- Not
+- Negation
+- Identity
+
+Operaciones Binarias:
+- And
+- Or
+- Minus
+- Plus
+- 

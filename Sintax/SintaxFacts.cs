@@ -2,7 +2,8 @@ namespace Compiler;
 
 public static class SintaxFacts
 {
-    public static Token Numerical(int x){ 
+    public static Token Numerical(int x)
+    { 
         return new Token(TokenType.INT,x.ToString(),(-1,-1));
     }
     public static bool EqualTerm(object left, object right)
@@ -70,7 +71,7 @@ public enum ValueType
 public class Scope
 {
     public Scope parentScope;
-    private Dictionary< string , Expression > Variables;
+    public Dictionary< string , Expression > Variables;
 
     public bool Find(IdentifierExpression exp, out ValueType? type)
     {
@@ -92,8 +93,28 @@ public class Scope
         else
         return finder;
     }
-    public void AddVar(string name, Expression Value)
+    public void AddVar(string name, Expression Value, Scope initial=null)
     {
-        Variables.Add(name, Value);
+        if(initial==null)
+        {
+            initial=this;
+        }
+        if(Variables.ContainsKey(name))
+        {
+            Variables[name]= Value;
+            Value.Semantic(Value.Scope);
+        }
+        else
+        {
+            if(parentScope==null)
+            {
+                initial.Variables[name]= Value;
+                Value.Semantic(Value.Scope);
+            }
+            else
+            {
+                parentScope.AddVar(name, Value, initial);
+            }
+        }
     }
 }

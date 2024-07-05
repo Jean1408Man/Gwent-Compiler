@@ -1,10 +1,12 @@
- namespace Compiler;
+using System.Reflection.Metadata;
+
+namespace Compiler;
 
  public abstract class Expression
  {
-    public ValueType? Type;
     public object? Value;
-    public Scope? Scope; 
+    public Scope? Scope;
+    public ValueType? Type; 
     public string? printed;
     public virtual void Print(int indentLevel = 0)
     {
@@ -27,6 +29,10 @@ public class ProgramExpression: Expression
     {
         throw new NotImplementedException();
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
 }
 #region Effect Expressions and associated
 public class EffectDeclarationExpr: Expression
@@ -43,11 +49,19 @@ public class EffectDeclarationExpr: Expression
         printed = "Effect";
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
 }
 public class InstructionBlock: Expression
 {
     public List<Expression>? Instructions= new();
     public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -63,6 +77,10 @@ public class ActionExpression: Expression
     public IdentifierExpression? Context;
     public InstructionBlock? Instructions;
     public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -82,6 +100,10 @@ public class ForExpression: Expression
     {
         throw new NotImplementedException();
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
     public override void Print(int indentLevel = 0)
     {
         printed = "For";
@@ -94,6 +116,10 @@ public class WhileExpression: Expression
     public Expression? Condition;
 
     public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -131,6 +157,10 @@ public class CardExpression: Expression
     {
         throw new NotImplementedException();
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
     public override void Print(int indentLevel = 0)
     {
         printed = "Card";
@@ -142,6 +172,10 @@ public class PredicateExp: Expression
     public IdentifierExpression? Unit;
     public Expression? Condition;
     public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -158,6 +192,10 @@ public class OnActivationExpression: Expression
         printed = "OnActivacion";
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
 }
 public class EffectAssignment: Expression
 {
@@ -165,6 +203,10 @@ public class EffectAssignment: Expression
     public SelectorExpression? Selector;
     public EffectAssignment? PostAction;
     public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -180,6 +222,10 @@ public class SelectorExpression: Expression
     public Expression? Single;
     public Expression? Predicate;
     public override object Evaluate()
+    {
+        throw new NotImplementedException();
+    }
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -216,6 +262,10 @@ public class BinaryOperator : Expression
         Right = right;
         Operator = Op;
         this.printed = Op.ToString();
+    }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
     }
     public override object Evaluate()
     {
@@ -271,7 +321,7 @@ public class Terminal: Expression
     {
         throw new NotImplementedException();
     }
-    public override ValueType Semantic(Scope scope)
+    public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
     }
@@ -297,6 +347,10 @@ public class UnaryOperator : Expression
             throw new Exception("Unknown unary operator");
         }
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        throw new NotImplementedException();
+    }
 }
 public class Number: Terminal
 {
@@ -307,6 +361,12 @@ public class Number: Terminal
     public override object Evaluate()
     {
         return Convert.ToDouble(Value.Value);
+    }
+    public override ValueType? Semantic(Scope scope)
+    {
+        this.Scope = scope;
+        Type = ValueType.Number;
+        return Type;
     }
 }
 public class BooleanLiteral : Terminal
@@ -319,6 +379,12 @@ public class BooleanLiteral : Terminal
     {
         return Convert.ToBoolean(Value.Value);
     }
+    public override ValueType? Semantic(Scope scope)
+    {
+        this.Scope = scope;
+        Type = ValueType.Boolean;
+        return Type;
+    }
 }
 
  
@@ -327,13 +393,21 @@ public class IdentifierExpression : Terminal
 {
     public IdentifierExpression(Token token):base(token)
     {
-        this.printed = "ID"; // O alguna otra forma de representar el identificador visualmente
+        this.printed = "ID";
     }
-    public override ValueType Semantic(Scope scope)
+    public override ValueType? Semantic(Scope scope)
     {
-        Type = null;
+        ValueType? tipo;
+        if(scope.Find(this, out tipo))
+        {
+            Type= tipo;
+            return tipo;
+        }
+        else
+        {
+            throw new Exception($"Use of an unassigned variable {this.Value.Value}");
+        }
     }
-
 }
 public class StringExpression : Terminal
 {
