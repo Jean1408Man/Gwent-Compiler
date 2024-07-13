@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Reflection.Metadata;
 
 namespace Compiler;
@@ -17,12 +18,10 @@ namespace Compiler;
  }
 public class ProgramExpression: Expression
 {
-    public List<EffectDeclarationExpr> Effects;
-    public List<CardExpression> Cards;
+    public List<Expression?> EffectsAndCards;
     public ProgramExpression()
     {
-        Effects= new();
-        Cards= new();
+        EffectsAndCards= new();
         printed = "Program";
     }
     public override object Evaluate()
@@ -31,9 +30,34 @@ public class ProgramExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        foreach(Expression? exp in  EffectsAndCards)
+        {
+            if(exp is CardExpression card)
+            {
+                if(card.Semantic(null)!=ValueType.CardDeclaration)
+                {
+                    return ValueType.Null;
+                }
+            }
+            else if(exp is EffectDeclarationExpr eff)
+            {
+                if(eff.Semantic(null)!=ValueType.EffectDeclaration)
+                {
+                    return ValueType.Null;
+                }
+            }
+            else
+                throw new Exception("Unexpected code entrance");
+        }
+        return ValueType.Program;
+
     }
 }
+
+
+
+
+
 #region Effect Expressions and associated
 public class EffectDeclarationExpr: Expression
 {
@@ -51,7 +75,29 @@ public class EffectDeclarationExpr: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        #region Name
+        if(Name== null || Name.Semantic(scope)!= ValueType.String)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        #region Action
+        if(Action== null || Action.Semantic(scope)!= ValueType.Action)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        #region Params
+        if(Params== null)
+        {
+            return ValueType.Null;
+        }
+        foreach(Expression exp in Params)
+        {
+            exp.Semantic(scope);
+        }
+        #endregion
+        return ValueType.EffectDeclaration;
     }
 }
 public class InstructionBlock: Expression
@@ -63,7 +109,13 @@ public class InstructionBlock: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        if(Instructions == null)
+        return ValueType.Null;
+        foreach(Expression exp in Instructions)
+        {
+            exp.Semantic(scope);
+        }
+        return ValueType.InstructionBlock;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -82,7 +134,25 @@ public class ActionExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        Scope = new Scope(scope);
+        if(Targets != null)
+        {
+            Targets.Type= ValueType.ListCard;
+            Scope.AddVar(Targets,Targets);
+        }
+        else return ValueType.Null;
+        if(Context != null)
+        {
+            Context.Type= ValueType.Context;
+            Scope.AddVar(Context,Context);
+        }
+        else return ValueType.Null;
+        if(Instructions != null)
+        {
+            if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+                return ValueType.Null;
+        }
+        return ValueType.Action;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -159,7 +229,55 @@ public class CardExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        #region Name
+        if(Name== null || Name.Semantic(scope)!= ValueType.String)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        
+        #region Type
+        if(Type== null || Type.Semantic(scope)!= ValueType.String)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        
+        #region Faction
+        if(Faction== null || Faction.Semantic(scope)!= ValueType.String)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        
+        #region Power
+        if(Name== null || Name.Semantic(scope)!= ValueType.Number)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        
+        #region Range
+        if(Range== null)
+        {
+            return ValueType.Null;
+        }
+        foreach(Expression exp in Range)
+        {
+            if(exp.Semantic(scope)!= ValueType.String)
+            {
+                return ValueType.Null;
+            }
+        }
+        #endregion
+        
+        #region OnActivation
+        if(OnActivation== null || OnActivation.Semantic(scope)!= ValueType.OnActivacion)
+        {
+            return ValueType.Null;
+        }
+        #endregion
+        return ValueType.Card;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -171,13 +289,22 @@ public class PredicateExp: Expression
 {
     public IdentifierExpression? Unit;
     public Expression? Condition;
+    public PredicateExp()
+    {
+        printed = "Predicate";
+    }
     public override object Evaluate()
     {
         throw new NotImplementedException();
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        Unit.Type = ValueType.Card;
+        Scope LocalForPredicate= new(scope);
+        LocalForPredicate.AddVar(Unit, Unit);
+        if(Condition== null || Condition.Semantic(LocalForPredicate)!= ValueType.Boolean)
+            return ValueType.Null;
+            return ValueType.Predicate;
     }
 }
 public class OnActivationExpression: Expression
@@ -194,7 +321,14 @@ public class OnActivationExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        if(Effects==null)
+            return ValueType.Null;
+        foreach(EffectAssignment assignment in Effects)
+        {
+            if(assignment.Semantic(scope)!= ValueType.EffectAssignment)
+                return ValueType.Null;
+        }
+        return ValueType.OnActivacion;
     }
 }
 public class EffectAssignment: Expression
@@ -209,10 +343,20 @@ public class EffectAssignment: Expression
     public override ValueType? Semantic(Scope scope)
     {
         throw new NotImplementedException();
+        #region Effect
+        if(Effect== null)
+        {
+            return ValueType.Null;
+        }
+        if(Effect.Count==1)
+        {
+
+        }
+        #endregion
     }
     public override void Print(int indentLevel = 0)
     {
-        printed = "OnActivacion";
+        printed = "Effect Assignment";
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
 }
@@ -227,7 +371,7 @@ public class SelectorExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        throw new NotImplementedException();        
     }
     public override void Print(int indentLevel = 0)
     {
@@ -255,6 +399,7 @@ public class BinaryOperator : Expression
     public Expression Left { get; set; }
     public Expression Right { get; set; }
     public TokenType Operator { get; set; }
+    public bool Fixed= false;
 
     public BinaryOperator(Expression left, Expression right, TokenType Op)
     {
@@ -263,9 +408,90 @@ public class BinaryOperator : Expression
         Operator = Op;
         this.printed = Op.ToString();
     }
+    public override bool Equals(object? obj)
+    {
+        if(obj is BinaryOperator bin && bin.Left.Equals(this.Left) && bin.Right.Equals(this.Right) && bin.Operator== this.Operator&& this.Operator== TokenType.POINT)
+        {//Ambos deben ser ids y deben tener el mismo nombre
+            return true;
+        }
+        return false;
+    }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        switch(Operator)
+        {
+            // Math
+            case TokenType.PLUS:
+            
+            case TokenType.MINUS:
+            case TokenType.MULTIPLY:
+            case TokenType.DIVIDE:
+            case TokenType.POW:
+            case TokenType.LESS_EQ:
+            case TokenType.MORE_EQ:
+            case TokenType.MORE:
+            case TokenType.LESS:
+            {
+                if(Left.Semantic(scope)== ValueType.Number && Right.Semantic(scope)== ValueType.Number)
+                    return ValueType.Number;
+                else
+                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+            }
+            // Booleans
+            case TokenType.EQUAL:
+            if(Left.Semantic(scope)== Right.Semantic(scope))
+                    return ValueType.Boolean;
+                else
+                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be from the same type");
+            case TokenType.AND:
+            case TokenType.OR:
+            {
+                if(Left.Semantic(scope)== ValueType.Boolean && Right.Semantic(scope)== ValueType.Boolean)
+                    return ValueType.Boolean;
+                else
+                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+            }
+            // String
+            case TokenType.CONCATENATION:
+            case TokenType.SPACE_CONCATENATION:
+            if(Left.Semantic(scope)== ValueType.String && Right.Semantic(scope)== ValueType.String)
+                    return ValueType.Number;
+            else
+                throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+            // Point            
+            case TokenType.POINT:
+            if(!Fixed) 
+            {
+                Expression exp = SintaxFacts.TwoPointsFixer(this);
+                if(exp is BinaryOperator binary)
+                {
+                    Left= binary.Left;
+                    Right = binary.Right;
+                }
+                else
+                throw new Exception("Unexpected code entrance");
+            }
+            ValueType? type = Left.Semantic(scope);
+            if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.Value.Type))
+            {
+                return SintaxFacts.TypeOf[right.Value.Type];
+            }
+            else
+                throw new Exception("Semantic from Point");
+
+            //Two Points
+            case TokenType.TWOPOINT:
+            Right.Semantic(scope);
+            if(Scope!=null)
+            {
+                Left.Semantic(scope);
+                Scope.AddVar(Left, Right);
+            }
+            return Right.Type;
+            break;
+            default:
+            throw new Exception("Invalid Operator");
+        }
     }
     public override object Evaluate()
     {
@@ -325,17 +551,25 @@ public class Terminal: Expression
     {
         throw new NotImplementedException();
     }
+    public override bool Equals(object? obj)
+    {
+        if(obj is Terminal id && id.Value.Value== this.Value.Value)
+        {//Ambos deben ser ids y deben tener el mismo nombre 
+            return true;
+        }
+        return false;
+    }
 }
 
-public class UnaryOperator : Expression
+public class UnaryOperator : Terminal
 {//Functions are included into Unary Operators because at the moment they only have one parameter
     public Expression Operand { get; set; }
     public TokenType Operator { get; set; }
 
-    public UnaryOperator(Expression operand, TokenType Op)
+    public UnaryOperator(Expression operand, Token Op):base(Op)
     {
         Operand = operand;
-        Operator = Op;
+        Operator = Op.Type;
     }
     public override object Evaluate()
     {
@@ -346,6 +580,14 @@ public class UnaryOperator : Expression
             default:
             throw new Exception("Unknown unary operator");
         }
+    }
+    public override bool Equals(object? obj)
+    {
+        if(obj is UnaryOperator unary && unary.Operator.Equals(this.Operator) && unary.Operand.Equals(this.Operand))
+        {
+            return true;
+        }
+        return false;
     }
     public override ValueType? Semantic(Scope scope)
     {
@@ -408,6 +650,7 @@ public class IdentifierExpression : Terminal
             throw new Exception($"Use of an unassigned variable {this.Value.Value}");
         }
     }
+    
 }
 public class StringExpression : Terminal
 {

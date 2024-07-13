@@ -4,7 +4,7 @@ Cosas pendientes:
 - Boolean type assignment
 - Preguntar si pasan dos Name da error
 - Agregar cosas en Lexer
-
+- Add Find() with and without params
 
 Operaciones Unarias:
 - Not
@@ -16,4 +16,9 @@ Operaciones Binarias:
 - Or
 - Minus
 - Plus
-- 
+
+
+Errores para Evaluate:
+- Division por cero
+- Remover en lista sin el elemento
+- Indexar en lista fuera de rango

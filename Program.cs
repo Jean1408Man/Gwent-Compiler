@@ -22,6 +22,7 @@ namespace Compiler
                 }
                 Parser parser = new(tokens);
                 Expression root = parser.Parse();
+                Semantic semantic= new Semantic(root);
                 Console.WriteLine(parser.position);
                 PrintExpressionTree(root);
             }
@@ -39,21 +40,39 @@ namespace Compiler
                 PrintExpressionTree(binaryNode.Left, indentLevel + 1);
                 PrintExpressionTree(binaryNode.Right, indentLevel + 1);
             }
+            
+            
+            else if(node is ActionExpression action)
+            {
+                PrintExpressionTree(action.Context,indentLevel+1);
+                PrintExpressionTree(action.Targets,indentLevel+1);
+                PrintExpressionTree(action.Instructions,indentLevel+1);
+            }
+            
+            
             else if (node is Terminal numberNode)
             {
                 Console.WriteLine(new string(' ', indentLevel * 4) + $"Value: {numberNode.ValueForPrint}");
             }
+            
+            
             else if (node is ProgramExpression prognode)
             {
-                foreach(EffectDeclarationExpr eff in prognode.Effects)
+                foreach(Expression exp in prognode.EffectsAndCards)
                 {
-                    PrintExpressionTree(eff, indentLevel + 1);
-                }
-                foreach(CardExpression card in prognode.Cards)
-                {
-                    PrintExpressionTree(card, indentLevel + 1);
+                    if( exp is EffectDeclarationExpr eff)
+                    {
+                        PrintExpressionTree(eff, indentLevel + 1);
+                    }
+                    else if(exp is CardExpression card)
+                    {
+                        PrintExpressionTree(card, indentLevel + 1);
+                    }
+
                 }
             }
+            
+            
             else if (node is EffectDeclarationExpr effNode)
             {
                 if(effNode.Name!= null)
@@ -66,9 +85,38 @@ namespace Compiler
                 }
                 if(effNode.Action!= null)
                 {
-
+                    PrintExpressionTree(effNode.Action);
                 }
             }
+            
+            
+            else if(node is EffectAssignment effassign)
+            {
+                if(effassign.Effect!= null)
+                {
+                    foreach(Expression exp in effassign.Effect)
+                    {
+                        PrintExpressionTree(exp, indentLevel +1);
+                    }
+                }
+                if(effassign.Selector!= null)
+                {
+                    PrintExpressionTree(effassign.Selector,indentLevel+1);
+                }
+                if(effassign.PostAction!= null)
+                {
+                    PrintExpressionTree(effassign.PostAction);
+                }
+            }
+            
+            
+            else if(node is OnActivationExpression onact)
+            {
+                foreach(Expression eff in onact.Effects)
+                PrintExpressionTree(eff, indentLevel+1);
+            }
+            
+            
             else if (node is CardExpression card)
             {
                 if(card.Name!= null)
@@ -83,9 +131,61 @@ namespace Compiler
                     foreach(Expression range in card.Range)
                     PrintExpressionTree(range, indentLevel + 2);
                 }
+                if(card.OnActivation!=null)
+                {
+                    PrintExpressionTree(card.OnActivation, indentLevel + 1);
+                }
             }
-            else if(node is UnaryOperator unaryOperator)
+            
+            
+            else if(node is UnaryOperator unaryOperator){
+            if(unaryOperator.Operand!=null)
             PrintExpressionTree(unaryOperator.Operand, indentLevel + 1);
+            }
+            
+            
+            else if(node is InstructionBlock instructionBlock)
+            {
+                foreach(Expression exp in instructionBlock.Instructions)
+                {
+                    PrintExpressionTree(exp, indentLevel + 1);
+                }
+            }
+            
+            
+            else if(node is ForExpression forexp)
+            {
+                PrintExpressionTree(forexp.Variable, indentLevel+1);
+                PrintExpressionTree(forexp.Collection,indentLevel +1);
+                PrintExpressionTree(forexp.Instructions,indentLevel +1);
+            }
+            
+            
+            else if(node is WhileExpression whilexp)
+            {
+                PrintExpressionTree(whilexp.Condition,indentLevel +1);
+                PrintExpressionTree(whilexp.Instructions,indentLevel +1);
+            }
+            
+            
+            else if(node is SelectorExpression selector)
+            {
+                PrintExpressionTree(selector.Source,indentLevel+1);
+                PrintExpressionTree(selector.Single,indentLevel+1);
+                PrintExpressionTree(selector.Predicate,indentLevel+1);
+            }
+            
+            
+            else if(node is PredicateExp predicate)
+            {
+                PrintExpressionTree(predicate.Unit,indentLevel+1);
+                PrintExpressionTree(predicate.Condition,indentLevel+1);
+            }
+            
+            
+            else
+                throw new Exception("UnHandled Expression");
+
         }
     }
 }

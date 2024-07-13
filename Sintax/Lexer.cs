@@ -58,6 +58,7 @@ public class Lexer {
         // Data Types
         { TokenType.NUMBERTYPE, @"\bNumber\b" },
         { TokenType.STRINGTYPE, @"\bString\b" },
+        { TokenType.BOOLEAN, @"\bBoolean\b" },
 
         // Symbols
         { TokenType.LPAREN, @"\(" },
@@ -93,6 +94,7 @@ public class Lexer {
 
         // Strings (double-quoted)
         { TokenType.STRING, @"""[^""]*""" },
+        { TokenType.END_OF_FILE, "\\\"" },
         { TokenType.SPACE_CONCATENATION, @"@@" },
         { TokenType.CONCATENATION, @"@" },
 
@@ -208,6 +210,7 @@ public enum TokenType
     REMOVE,
     SHUFFLE,
     NUMBERTYPE,
+    BOOLEAN,
     STRINGTYPE,
     LPAREN,
     RPAREN,
@@ -239,5 +242,6 @@ public enum TokenType
     NOTEQUAL,
     LESS,
     MORE,
+    END_OF_FILE,
     ID,
 }
