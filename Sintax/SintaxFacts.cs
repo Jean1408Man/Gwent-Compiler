@@ -59,25 +59,34 @@ public static class SintaxFacts
             return 0;
         }
     }
+    
+    
+    
+    
     public static Dictionary<ValueType?, HashSet<TokenType>> PointPosibbles= new Dictionary<ValueType?, HashSet<TokenType>>
     {
         {ValueType.Card, new HashSet<TokenType>(){TokenType.NAME, TokenType.OWNER, TokenType.POWER, TokenType.FACTION,TokenType.RANGE, TokenType.TYPE}},
 
 
-        {ValueType.Context, new HashSet<TokenType>(){TokenType.DECK, TokenType.DECKOFPLAYER, TokenType.GRAVEYARD, TokenType.GRAVEYARDOFPLAYER
+        {ValueType.Context, new HashSet<TokenType>(){TokenType.FIND,TokenType.DECK, TokenType.DECKOFPLAYER, TokenType.GRAVEYARD, TokenType.GRAVEYARDOFPLAYER
         , TokenType.FIELD,TokenType.FIELDOFPLAYER, TokenType.HAND, TokenType.HANDOFPLAYER,TokenType.BOARD, TokenType.TRIGGERPLAYER}},
 
         
-        {ValueType.ListCard, new HashSet<TokenType>(){TokenType.FIND, TokenType.PUSH, TokenType.SENDBOTTOM, TokenType.POP
+        {ValueType.ListCard, new HashSet<TokenType>(){TokenType.FIND, TokenType.PUSH, TokenType.SENDBOTTOM, TokenType.POP, TokenType.SHUFFLE
         }},
 
     };
     public static Dictionary<TokenType, ValueType> TypeOf = new Dictionary<TokenType, ValueType>
     {
+
+
         //  Strings
         {TokenType.NAME, ValueType.String},
         {TokenType.FACTION, ValueType.String},
         {TokenType.TYPE, ValueType.String},
+        {TokenType.STRINGTYPE, ValueType.String},
+        {TokenType.SOURCE, ValueType.String},
+        {TokenType.EFFECTASSIGNMENT, ValueType.String},
 
         //Players
         {TokenType.OWNER, ValueType.Player},
@@ -85,6 +94,17 @@ public static class SintaxFacts
         
         //Numbers
         {TokenType.POWER, ValueType.Number},
+        {TokenType.PLUS, ValueType.Number},
+        {TokenType.MINUS, ValueType.Number},
+        {TokenType.NUMBERTYPE, ValueType.Number},
+
+        //Predicates
+        {TokenType.PREDICATE, ValueType.Predicate},
+
+        //Booleans
+        {TokenType.NOT, ValueType.Boolean},
+        {TokenType.BOOLEAN, ValueType.Boolean},
+        {TokenType.SINGLE, ValueType.Boolean},
         
         // List Cards
         {TokenType.DECK, ValueType.ListCard},
@@ -104,44 +124,24 @@ public static class SintaxFacts
         //Voids
         {TokenType.SENDBOTTOM, ValueType.Void},
         {TokenType.PUSH, ValueType.Void},
+        {TokenType.SHUFFLE, ValueType.Void},
+        {TokenType.ADD, ValueType.Void},
 
     };
 
-    #region Two Points Fixer
-    public static Expression TwoPointsFixer(BinaryOperator TwoPointer)
+    public static readonly List<ValueType?> AssignableTypes= new List<ValueType?>
     {
-        List<Expression?> expressions = ListPoint(TwoPointer);
-        return BuildFixedBin(expressions,0, expressions.Count-1);
-    }
-    private static List<Expression?> ListPoint(BinaryOperator binary)
-    {
-        List<Expression?> list = new List<Expression>();
-        list.Add(binary.Left);
-        if(binary.Right is BinaryOperator bin)
-        list.Concat(ListPoint(bin));
-        else
-        list.Add(binary.Right);
-        return list;
-    }
-    private static Expression BuildFixedBin(List<Expression?> list, int ini, int fin)
-    {
-        if(ini==fin)
-        {
-            return list[ini];        
-        }
-        BinaryOperator binary = new BinaryOperator(BuildFixedBin(list, ini,fin-1), list[fin], TokenType.POINT);
-        binary.Fixed= true;
-        return binary;
-    } 
-    #endregion
-
-    
-
+        ValueType.Number,
+        ValueType.Boolean,
+        ValueType.UnassignedVar,
+        ValueType.String
+    };
 }
+
 public enum ValueType
 {
     Null,
-
+    UnassignedVar,
 
     Number,
     String,
@@ -161,14 +161,14 @@ public enum ValueType
     OnActivacion,
     Predicate,
     EffectAssignment,
+    For,
     EffectDeclaration,
     CardDeclaration,
     Action,
     InstructionBlock,
-    Program
+    Selector,
+    Program,
     #endregion
-
-
 }
 public class Scope
 {//No Debuggeado
@@ -177,7 +177,8 @@ public class Scope
     {
         parentScope= Parent;
     }
-    public Dictionary< Expression , Expression > Variables;
+    public bool WithoutReps=false;
+    public Dictionary< Expression , Expression > Variables= new();
     private void InternalFind(Expression tofind, out Expression Finded, out Scope Where)
     {
         bool b= false;
@@ -227,13 +228,17 @@ public class Scope
         InternalFind(exp,out Finded, out Where);
         if(Where!= null)
         {
-            Where.Variables[Finded]= Value;
+            if(!WithoutReps)
+                Where.Variables[Finded]= Value;
+            else
+                throw new Exception("A no Reps statement was violated");
         }
         else
         {
             Variables.Add(exp,Value);
         }
     }
+    
 }
 
 

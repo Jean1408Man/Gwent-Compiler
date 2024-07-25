@@ -1,0 +1,2 @@
+Solo existen predicates que devuelvan cartas?
+PostAction solo contiene un efecto?

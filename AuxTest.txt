@@ -152,8 +152,7 @@ card {
                 Predicate: (unit) => true
             },
             PostAction: {
-                Type: "Damage",
-                Amount: 5,
+                Effect: "Damage",
                 Selector: {
                     Source: "board",
                     Single: false,

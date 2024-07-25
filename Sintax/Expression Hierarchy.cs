@@ -11,7 +11,10 @@ namespace Compiler;
     public string? printed;
     public virtual void Print(int indentLevel = 0)
     {
-        Console.WriteLine(new string(' ', indentLevel * 4) + printed);
+        if(Type!= null)
+        Console.WriteLine(new string(' ', indentLevel * 4) +"Token: "+ printed+ "---" + "Type: "+ Type);
+        else
+        Console.WriteLine(new string(' ', indentLevel * 4) +"Token: "+ printed);
     }
     public abstract ValueType? Semantic(Scope scope);
     public abstract object Evaluate();
@@ -36,18 +39,18 @@ public class ProgramExpression: Expression
             {
                 if(card.Semantic(null)!=ValueType.CardDeclaration)
                 {
-                    return ValueType.Null;
+                    throw new Exception("Semantic Error, Expected Card Declaration Type");
                 }
             }
             else if(exp is EffectDeclarationExpr eff)
             {
                 if(eff.Semantic(null)!=ValueType.EffectDeclaration)
                 {
-                    return ValueType.Null;
+                    throw new Exception("Semantic Error, Expected Effect Declaration Type");
                 }
             }
             else
-                throw new Exception("Unexpected code entrance");
+                throw new Exception("Semantic Error, Unexpected code entrance, Program Statement contains an expression but its not a card or effect");
         }
         return ValueType.Program;
 
@@ -74,27 +77,32 @@ public class EffectDeclarationExpr: Expression
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
     public override ValueType? Semantic(Scope scope)
-    {
+    {//Dependiendo de si queremos que Name sea accesible dentro del Action se pasarará Scope o scope, asumo por ahora que no
+        Scope = new Scope(scope);
+        
         #region Name
         if(Name== null || Name.Semantic(scope)!= ValueType.String)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Expected String Type");
         }
         #endregion
-        #region Action
-        if(Action== null || Action.Semantic(scope)!= ValueType.Action)
-        {
-            return ValueType.Null;
-        }
-        #endregion
+        
         #region Params
-        if(Params== null)
+        if(Params!= null)
         {
-            return ValueType.Null;
+            Scope.WithoutReps=true;
+            foreach(Expression exp in Params)
+            {
+                exp.Semantic(Scope);
+            }
+            Scope.WithoutReps=false;
         }
-        foreach(Expression exp in Params)
+        #endregion
+        
+        #region Action
+        if(Action== null || Action.Semantic(Scope)!= ValueType.Action)
         {
-            exp.Semantic(scope);
+            throw new Exception("Semantic Error, Expected Action Type");
         }
         #endregion
         return ValueType.EffectDeclaration;
@@ -110,7 +118,7 @@ public class InstructionBlock: Expression
     public override ValueType? Semantic(Scope scope)
     {
         if(Instructions == null)
-        return ValueType.Null;
+        throw new Exception("Semantic Error, Empty Instruction Block");
         foreach(Expression exp in Instructions)
         {
             exp.Semantic(scope);
@@ -140,18 +148,15 @@ public class ActionExpression: Expression
             Targets.Type= ValueType.ListCard;
             Scope.AddVar(Targets,Targets);
         }
-        else return ValueType.Null;
+        else throw new Exception("Semantic Error, Targets is Empty");
         if(Context != null)
         {
             Context.Type= ValueType.Context;
             Scope.AddVar(Context,Context);
         }
-        else return ValueType.Null;
-        if(Instructions != null)
-        {
-            if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
-                return ValueType.Null;
-        }
+        else throw new Exception("Semantic Error, Context is Empty");
+        if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+            throw new Exception("Semantic Error, Expected Instruction Block Type");
         return ValueType.Action;
     }
     public override void Print(int indentLevel = 0)
@@ -164,7 +169,7 @@ public class ForExpression: Expression
 {
     public InstructionBlock? Instructions= new();
     public IdentifierExpression? Variable;
-    public IdentifierExpression? Collection;
+    public Expression? Collection;
 
     public override object Evaluate()
     {
@@ -172,7 +177,25 @@ public class ForExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        Scope = new Scope(scope);
+        if(Variable != null)
+        {
+            Variable.Type= ValueType.Card;
+            Scope.AddVar(Variable,Variable);
+        }
+        else throw new Exception("Semantic Error, For Variable is Empty");
+        if(Collection != null)
+        {
+            Collection.Type= ValueType.ListCard;
+            Scope.AddVar(Collection,Collection);
+        }
+        else throw new Exception("Semantic Error, For Collection is Empty");
+        if(Instructions != null)
+        {
+            if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+                throw new Exception("Semantic Error, Expected Instruction Block Type, at a for Expression");
+        }
+        return ValueType.For;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -191,7 +214,17 @@ public class WhileExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        Scope = new Scope(scope);
+        if(Condition != null)
+        {
+            Condition.Type= Condition.Semantic(scope);
+            if(Condition.Type!= ValueType.Boolean)
+                throw new Exception("Semantic Error, Expected Boolean Type in While Condition");
+        }
+        else throw new Exception("Semantic Error, Condition is Empty");
+        if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+            throw new Exception("Semantic Error, Expected Instruction Block Type");
+        return ValueType.Action;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -232,41 +265,38 @@ public class CardExpression: Expression
         #region Name
         if(Name== null || Name.Semantic(scope)!= ValueType.String)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Expected String Type");
         }
         #endregion
         
         #region Type
         if(Type== null || Type.Semantic(scope)!= ValueType.String)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Expected String Type");
         }
         #endregion
         
         #region Faction
         if(Faction== null || Faction.Semantic(scope)!= ValueType.String)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Expected String Type");
         }
         #endregion
         
         #region Power
-        if(Name== null || Name.Semantic(scope)!= ValueType.Number)
+        if(Name== null || Power.Semantic(scope)!= ValueType.Number)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Expected Number Type");
         }
         #endregion
         
         #region Range
-        if(Range== null)
-        {
-            return ValueType.Null;
-        }
         foreach(Expression exp in Range)
         {
-            if(exp.Semantic(scope)!= ValueType.String)
+            ValueType? check= exp.Semantic(scope);
+            if(check != ValueType.String)
             {
-                return ValueType.Null;
+                throw new Exception("Semantic Error, Expected String Type in Ranges");
             }
         }
         #endregion
@@ -274,7 +304,7 @@ public class CardExpression: Expression
         #region OnActivation
         if(OnActivation== null || OnActivation.Semantic(scope)!= ValueType.OnActivacion)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Expected OnActivation Type");
         }
         #endregion
         return ValueType.Card;
@@ -303,8 +333,8 @@ public class PredicateExp: Expression
         Scope LocalForPredicate= new(scope);
         LocalForPredicate.AddVar(Unit, Unit);
         if(Condition== null || Condition.Semantic(LocalForPredicate)!= ValueType.Boolean)
-            return ValueType.Null;
-            return ValueType.Predicate;
+            throw new Exception("Semantic Error, Expected Boolean Type in Predicate Condition");
+        return ValueType.Predicate;
     }
 }
 public class OnActivationExpression: Expression
@@ -322,11 +352,11 @@ public class OnActivationExpression: Expression
     public override ValueType? Semantic(Scope scope)
     {
         if(Effects==null)
-            return ValueType.Null;
+            throw new Exception("Semantic Error, There are not Effects in OnActivation");
         foreach(EffectAssignment assignment in Effects)
         {
             if(assignment.Semantic(scope)!= ValueType.EffectAssignment)
-                return ValueType.Null;
+                throw new Exception("Semantic Error, Expected Effect Assignment Type");
         }
         return ValueType.OnActivacion;
     }
@@ -342,17 +372,33 @@ public class EffectAssignment: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        Scope = new Scope();
         #region Effect
         if(Effect== null)
         {
-            return ValueType.Null;
+            throw new Exception("Semantic Error, Effect is Empty, must contain at least a name");
         }
-        if(Effect.Count==1)
+        Scope.WithoutReps=true;
+        foreach(Expression? statements in Effect)
         {
-
+            ValueType? tipo= statements.Semantic(Scope);
+        }
+        Scope.WithoutReps=false;
+        #endregion
+        
+        #region Selector
+        if(Selector== null || Selector.Semantic(scope)!= ValueType.Selector)
+        {
+            throw new Exception("Semantic Error, Expected Seletor Type");
         }
         #endregion
+        #region Post Action
+        if(PostAction== null || PostAction.Semantic(scope)!= ValueType.OnActivacion)
+        {
+            throw new Exception("Semantic Error, Expected OnActivation Type");
+        }
+        #endregion
+        return ValueType.EffectAssignment;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -371,7 +417,25 @@ public class SelectorExpression: Expression
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();        
+        #region Source
+        if(Source== null || Source.Semantic(scope)!= ValueType.String)
+        {
+            throw new Exception("Semantic Error, Expected String Type");
+        }
+        #endregion
+        #region Single
+        if(Single== null || Single.Semantic(scope)!= ValueType.Boolean)
+        {
+            throw new Exception("Semantic Error, Expected Boolean Type");
+        }
+        #endregion
+        #region Predicate
+        if(Predicate== null || Predicate.Semantic(scope)!= ValueType.Predicate)
+        {
+            throw new Exception("Semantic Error, Expected Predicate Type");
+        }
+        #endregion
+        return ValueType.Selector;        
     }
     public override void Print(int indentLevel = 0)
     {
@@ -420,26 +484,48 @@ public class BinaryOperator : Expression
     {
         switch(Operator)
         {
+            //Acums
+            case TokenType.PLUSACCUM:
+            case TokenType.MINUSACCUM:
+            
             // Math
             case TokenType.PLUS:
-            
             case TokenType.MINUS:
             case TokenType.MULTIPLY:
             case TokenType.DIVIDE:
             case TokenType.POW:
+            {
+                if(Left.Semantic(scope)== ValueType.Number && Right.Semantic(scope)== ValueType.Number)
+                    {
+                        Left.Type= ValueType.Number;
+                        Right.Type= ValueType.Number;
+                        Type=   ValueType.Number;
+                        return ValueType.Number;
+                    }
+                else
+                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+            }
+            //Math that return boolean
             case TokenType.LESS_EQ:
             case TokenType.MORE_EQ:
             case TokenType.MORE:
             case TokenType.LESS:
             {
                 if(Left.Semantic(scope)== ValueType.Number && Right.Semantic(scope)== ValueType.Number)
-                    return ValueType.Number;
+                    {
+                        Left.Type= ValueType.Number;
+                        Right.Type= ValueType.Number;
+                        Type=   ValueType.Boolean;
+                        return ValueType.Boolean;
+                    }
                 else
                     throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
             }
             // Booleans
             case TokenType.EQUAL:
-            if(Left.Semantic(scope)== Right.Semantic(scope))
+            Left.Type = Left.Semantic(scope);
+            Right.Type = Right.Semantic(scope);
+            if(Left.Type== Right.Type)
                     return ValueType.Boolean;
                 else
                     throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be from the same type");
@@ -447,50 +533,100 @@ public class BinaryOperator : Expression
             case TokenType.OR:
             {
                 if(Left.Semantic(scope)== ValueType.Boolean && Right.Semantic(scope)== ValueType.Boolean)
-                    return ValueType.Boolean;
+                    {
+                        Left.Type= ValueType.Boolean;
+                        Right.Type= ValueType.Boolean;
+                        Type= ValueType.Boolean;
+                        return ValueType.Boolean;
+                    }
                 else
                     throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
             }
+            
             // String
             case TokenType.CONCATENATION:
             case TokenType.SPACE_CONCATENATION:
             if(Left.Semantic(scope)== ValueType.String && Right.Semantic(scope)== ValueType.String)
-                    return ValueType.Number;
+            {
+                Left.Type= ValueType.String;
+                Right.Type= ValueType.String;
+                Type= ValueType.String;
+                return ValueType.String;
+            }
             else
                 throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+            
             // Point            
             case TokenType.POINT:
-            if(!Fixed) 
-            {
-                Expression exp = SintaxFacts.TwoPointsFixer(this);
-                if(exp is BinaryOperator binary)
-                {
-                    Left= binary.Left;
-                    Right = binary.Right;
-                }
-                else
-                throw new Exception("Unexpected code entrance");
-            }
             ValueType? type = Left.Semantic(scope);
+            Left.Type= type;
             if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.Value.Type))
             {
+                type= right.Semantic(scope);
+                Right.Type= type;
                 return SintaxFacts.TypeOf[right.Value.Type];
+            }
+            else if(type != ValueType.Null && Right is BinaryOperator binary && binary.Operator== TokenType.INDEXER )
+            {
+                if(binary.Left is Terminal T && SintaxFacts.PointPosibbles[type].Contains(T.Value.Type))
+                {//Chequeo que en el indexado la parte izquierda sea únicamente un terminal, de lo contrario se usaron paréntesis, lo cual no es permitido
+                    binary.Left.Type= SintaxFacts.TypeOf[T.Value.Type];
+                    type = binary.Semantic(scope);
+                    return type; 
+                }
+                throw new Exception("Semantic, tried to associate from Point");
             }
             else
                 throw new Exception("Semantic from Point");
+            
+            case TokenType.INDEXER:
+            if(Left.Type!= ValueType.ListCard)
+            {
+                if(Left.Semantic(scope)== ValueType.ListCard)
+                {
+                    Left.Type= ValueType.ListCard;
+                }
+                else
+                    throw new Exception("Semantic, tried to index a non ListCard item");
+            }
+            if(Right.Semantic(scope)== ValueType.Number)
+            {
+                Right.Type= ValueType.Number;
+                return ValueType.Card;
+            }
+            else
+            {
+                throw new Exception("Semantic, tried to index by a non numerical expression");
+            }
 
             //Two Points
+            case TokenType.ASSIGN:
             case TokenType.TWOPOINT:
-            Right.Semantic(scope);
-            if(Scope!=null)
+            ValueType? tipo = Right.Semantic(scope);
+            Right.Type= tipo;
+            ValueType? tempforOut;
+            if(scope == null||!scope.Find(Left, out tempforOut)|| !scope.WithoutReps)
             {
-                Left.Semantic(scope);
-                Scope.AddVar(Left, Right);
+            Left.Type= Left.Semantic(scope);
+            if(SintaxFacts.AssignableTypes.Contains(Left.Type)){
+            if(Left.Type== Right.Type|| Left.Type== ValueType.UnassignedVar)
+            {
+                Left.Type= Right.Type;
+                if(scope!=null)
+                    scope.AddVar(Left, Right);
+                
             }
+            else throw new Exception($"Semantic Error at assignment, between {Left.Type} && {Right.Type}");
+            }
+            else throw new Exception($"Semantic Error at assignment, because {Left.Type} is readonly");
+            }
+            else throw new Exception($"At least two declaration statements");
+            Type= Right.Type;
             return Right.Type;
-            break;
+            
+            
             default:
-            throw new Exception("Invalid Operator");
+            throw new Exception("Invalid Operator"+ Operator);
         }
     }
     public override object Evaluate()
@@ -570,6 +706,7 @@ public class UnaryOperator : Terminal
     {
         Operand = operand;
         Operator = Op.Type;
+        printed= "Unary Operator---"+ Operator;
     }
     public override object Evaluate()
     {
@@ -591,7 +728,61 @@ public class UnaryOperator : Terminal
     }
     public override ValueType? Semantic(Scope scope)
     {
-        throw new NotImplementedException();
+        if(Operand!= null)
+        switch(Operator)
+        {
+            //Card Argument
+            case TokenType.SENDBOTTOM:
+            case TokenType.REMOVE:
+            case TokenType.PUSH:
+            case TokenType.ADD:
+            if(Operand.Semantic(scope)==ValueType.Card)
+                return ValueType.Card;
+            else
+                throw new Exception("Semantic Error, Expected Card Type");
+            //Player Argument
+            case TokenType.HANDOFPLAYER:
+            case TokenType.DECKOFPLAYER:
+            case TokenType.GRAVEYARDOFPLAYER:
+            case TokenType.FIELDOFPLAYER:
+            if(Operand.Semantic(scope)==ValueType.Player)
+                return ValueType.Player;
+            else
+                throw new Exception("Semantic Error, Expected Player Type");
+            //Numbers
+            case TokenType.RDECREMENT:
+            case TokenType.LDECREMENT:
+            case TokenType.RINCREMENT:
+            case TokenType.LINCREMENT:
+            {
+                if(Operand.Semantic(scope)==ValueType.Number)
+                    return ValueType.Number;
+                else
+                    throw new Exception("Semantic Error, Expected Number Type");
+            }
+
+            //Boolean
+            case TokenType.NOT:
+            {
+                if(Operand.Semantic(scope)==ValueType.Boolean)
+                    return ValueType.Boolean;
+                else
+                    throw new Exception("Semantic Error, Expected Boolean Type");
+            }
+            case TokenType.FIND:
+            if(Operand.Semantic(scope)!= ValueType.Predicate)
+            {
+                throw new Exception("Semantic Error, Expected Predicate Type");
+            }
+            Operand.Type= ValueType.Predicate;
+            break;
+        }
+        if(SintaxFacts.TypeOf.ContainsKey(Operator))
+        {
+            Type = SintaxFacts.TypeOf[Operator];
+            return Type;
+        }
+        throw new Exception("Invalid Unary Operator");
     }
 }
 public class Number: Terminal
@@ -639,18 +830,26 @@ public class IdentifierExpression : Terminal
     }
     public override ValueType? Semantic(Scope scope)
     {
-        ValueType? tipo;
-        if(scope.Find(this, out tipo))
+        if(SintaxFacts.TypeOf.ContainsKey(Value.Type))
         {
-            Type= tipo;
-            return tipo;
+            Type= SintaxFacts.TypeOf[Value.Type];
+            return Type;
         }
         else
         {
-            throw new Exception($"Use of an unassigned variable {this.Value.Value}");
+            ValueType? tipo;
+            if(scope!= null && scope.Find(this, out tipo))
+            {
+                Type= tipo;
+                return tipo;
+            }
+            else
+            {
+                Type= ValueType.UnassignedVar;
+                return ValueType.UnassignedVar;
+            }
         }
     }
-    
 }
 public class StringExpression : Terminal
 {

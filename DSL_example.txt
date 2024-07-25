@@ -6,7 +6,7 @@ effect {
     Action: (targets, context) => {
         for target in targets {
             i = 0;
-            while (i+1 < Amount)
+            while (i++ < Amount)
                 target.Power+=1;
         };
     }

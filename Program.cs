@@ -22,8 +22,9 @@ namespace Compiler
                 }
                 Parser parser = new(tokens);
                 Expression root = parser.Parse();
-                Semantic semantic= new Semantic(root);
                 Console.WriteLine(parser.position);
+                PrintExpressionTree(root);
+                Semantic semantic= new Semantic(root);
                 PrintExpressionTree(root);
             }
             catch (Exception e)
@@ -47,6 +48,12 @@ namespace Compiler
                 PrintExpressionTree(action.Context,indentLevel+1);
                 PrintExpressionTree(action.Targets,indentLevel+1);
                 PrintExpressionTree(action.Instructions,indentLevel+1);
+            }
+            
+            
+            else if(node is UnaryOperator unaryOperator){
+            if(unaryOperator.Operand!=null)
+            PrintExpressionTree(unaryOperator.Operand, indentLevel + 1);
             }
             
             
@@ -135,12 +142,6 @@ namespace Compiler
                 {
                     PrintExpressionTree(card.OnActivation, indentLevel + 1);
                 }
-            }
-            
-            
-            else if(node is UnaryOperator unaryOperator){
-            if(unaryOperator.Operand!=null)
-            PrintExpressionTree(unaryOperator.Operand, indentLevel + 1);
             }
             
             

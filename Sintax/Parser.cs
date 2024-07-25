@@ -39,31 +39,47 @@ public class Parser
         }
         return left;
     }
-    private Expression ParsePrimaryExpression(bool left= false)
+    private Expression ParsePrimaryExpression()
     {//Aqui agregue funciones al parser
+        Expression returned= null;
         #region Expresiones Literales
         if (position >= tokens.Count) throw new Exception("Unexpected end of input");
+        
         if (tokens[position].Type == TokenType.LPAREN)
         {
             position++;
-            Expression expr = ParseExpression(); 
+            Expression expr = ParseExpression(0); 
             if (tokens[position].Type!= TokenType.RPAREN)
             {
-                throw new Exception("Missing closing parenthesis");
+                throw new Exception($"Invalid Token: {tokens[position]}. Missing closing parenthesis");
             }
             position++;
-            return expr;
+            returned= expr;
         }
+        else if (tokens[position].Type == TokenType.INCREMENT|| tokens[position].Type == TokenType.DECREMENT)
+        {
+            if(tokens[position].Type== TokenType.INCREMENT)
+                tokens[position].Type= TokenType.LINCREMENT;
+            else
+                tokens[position].Type= TokenType.LDECREMENT;
+            Token token= tokens[position];
+            position++;
+            Expression expr = ParsePrimaryExpression(); 
+            returned= new UnaryOperator(expr, token);
+        }
+        
         else if (tokens[position].Type == TokenType.FALSE|| tokens[position].Type == TokenType.TRUE)
         {
             position++; 
             return new BooleanLiteral(tokens[position - 1]);
         }
+        
         else if (tokens[position].Type == TokenType.ID)
         {
             position++; 
-            return new IdentifierExpression(tokens[position - 1]);
+            returned= new IdentifierExpression(tokens[position - 1]);
         }
+        
         else if (tokens[position].Type == TokenType.NAME || tokens[position].Type == TokenType.TYPE 
                 ||tokens[position].Type == TokenType.FACTION ||tokens[position].Type == TokenType.POWER 
                 ||tokens[position].Type == TokenType.EFFECTASSIGNMENT || tokens[position].Type == TokenType.SOURCE 
@@ -73,25 +89,29 @@ public class Parser
                 ||tokens[position].Type == TokenType.HAND)
         {
             position++; 
-            return new IdentifierExpression(tokens[position - 1]);
+            returned= new IdentifierExpression(tokens[position - 1]);
         }
+        
         else if (tokens[position].Type == TokenType.STRING)
         {
             position++;
-            return new StringExpression(tokens[position - 1]);
+            returned= new StringExpression(tokens[position - 1]);
         }
+        
         else if (tokens[position].Type == TokenType.INT)
         {//TRABAJAR LOS INCREMENTOS
             position++;
-            return new Number(tokens[position - 1]);
+            returned= new Number(tokens[position - 1]);
         }
-        else if ((tokens[position].Type == TokenType.NOT)||(tokens[position].Type == TokenType.PLUS)||(tokens[position].Type == TokenType.MINUS) && (position == 0 
-        || (tokens[position - 1].Type != TokenType.INT&& tokens[position - 1].Type != TokenType.ID)))
+        
+        else if ((tokens[position].Type == TokenType.NOT)||(tokens[position].Type == TokenType.PLUS)||(tokens[position].Type == TokenType.MINUS) //&& (position == 0 
+        //|| (tokens[position - 1].Type != TokenType.INT&& tokens[position - 1].Type != TokenType.ID)))
+        )
         {
-            TokenType unary = tokens[position].Type;
+            Token unary = tokens[position];
             position++;
             Expression operand = ParsePrimaryExpression();
-            return new BinaryOperator(new Number(SintaxFacts.Numerical(0)), operand, unary);
+            returned= new UnaryOperator(operand, unary);
         }
         #endregion
         #region Funciones
@@ -101,8 +121,9 @@ public class Parser
             if(tokens[++position].Type== TokenType.LPAREN && tokens[++position].Type== TokenType.RPAREN)
             {
                 position++;
-                return new UnaryOperator(null, token);
+                returned= new UnaryOperator(null, token);
             }
+            throw new Exception($"Invalid Token: {tokens[position]}. Expected a none parameters method sintax");
         }
         else if (tokens[position].Type == TokenType.PUSH ||
                 tokens[position].Type == TokenType.SENDBOTTOM||tokens[position].Type == TokenType.REMOVE
@@ -129,18 +150,47 @@ public class Parser
                             {
                                 position++;
                                 argument=null;
-                                return new UnaryOperator(argument, token);
+                                returned= new UnaryOperator(argument, token);
                             }
                         }
                         if(tokens[position++].Type== TokenType.RPAREN)
                         {
-                            return new UnaryOperator(argument, token);
+                            returned= new UnaryOperator(argument, token);
                         }
                     }
                 }
         #endregion
+        else
+        throw new Exception($"Invalid Token: {tokens[position]}. Not recognizable primary token");
         
-        throw new Exception($"{position} Not recognizable primary token {tokens[position].Type}");
+        if(tokens[position].Type == TokenType.INCREMENT || tokens[position].Type== TokenType.DECREMENT)
+        {//Incrementos a la derecha
+            if(tokens[position].Type== TokenType.INCREMENT)
+                tokens[position].Type= TokenType.RINCREMENT;
+            else
+                tokens[position].Type= TokenType.RDECREMENT;
+            position++;
+            return new UnaryOperator(returned, tokens[position-1]);
+        }
+        else if(tokens[position].Type== TokenType.LBRACKET)
+        {//Indexado
+            Token token = tokens[position];
+            if(tokens[++position].Type== TokenType.RBRACKET)
+            {
+                throw new Exception($"Invalid Token: {tokens[position]}. Expected an Expression to index");
+            }
+            Expression Argument= ParseExpression();
+            if(tokens[position].Type== TokenType.RBRACKET)
+            {
+                position++;
+                return new BinaryOperator(returned, Argument, TokenType.INDEXER);
+            }
+            else
+                throw new Exception($"Invalid Token: {tokens[position]}. Expected a Right Bracket to index");
+
+        }
+        else return returned;
+
     }
     #endregion
     private Expression ParseAssignment(bool expectedAssign, bool IsProperty= true)
@@ -155,18 +205,14 @@ public class Parser
         Expression Binary= null;
         if(expectedAssign)
         {
-            if (token.Type == TokenType.ASSIGN|| token.Type == TokenType.TWOPOINT)//Agregar formas como incremento etc...
+            if (token.Type == TokenType.ASSIGN|| token.Type == TokenType.TWOPOINT || 
+            token.Type == TokenType.PLUSACCUM|| token.Type == TokenType.MINUSACCUM)//Agregar formas como incremento etc...
             {
                 position++;
                 right = ParseExpression();
                 Binary= new BinaryOperator(left, right,token.Type);
             }
-            else if(token.Type == TokenType.PLUSACCUM|| token.Type == TokenType.MINUSACCUM)
-            {
-                position++;
-                right = new UnaryOperator(ParseExpression(), token);
-                Binary= new BinaryOperator(left, right,token.Type);
-            }
+            
         }
         else 
         {
@@ -192,11 +238,11 @@ public class Parser
                 if(!IsProperty&& expectedAssign)
                     return left;
                 else
-                    throw new Exception($"Invalid Token at {token.lugar.fila} row and {token.lugar.colmna} column expected assignment token in Property definition");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected assignment token in Property definition");
             }
         }
         else
-        throw new Exception($"{position} Unexpected assign token at {token.lugar.fila} file and {token.lugar.colmna} column({token.Type}), expected Comma or Semicolon");
+        throw new Exception($"Invalid Token: {tokens[position]}. Expected Comma or Semicolon");
     }
     
     private Expression ParseProgram()
@@ -220,9 +266,8 @@ public class Parser
                     }
                     
                 }
-                
                 else
-                throw new Exception($"{position} Invalid token {tokens[position-1]}, expected Left Curly");
+                throw new Exception($"Invalid Token: {tokens[position-1]}. Expected Left Curly");
             }
             else if(token.Type== TokenType.END_OF_FILE)
                 {
@@ -234,10 +279,10 @@ public class Parser
                                 return program;
                             }
                         }
-                        throw new Exception("Unexpected end of file sintax");
+                        throw new Exception($"Invalid Token: {tokens[position]}. Unexpected end of file sintax");
                 }
             else
-            throw new Exception($"{position} Invalid Token at {token.lugar.fila} row and {token.lugar.colmna} column expected Effect or Card ");
+            throw new Exception($"Invalid Token: {tokens}. Expected Effect or Card ");
         }
         return program;
     }
@@ -254,41 +299,41 @@ public class Parser
             {
                 case TokenType.NAME:
                     if(card.Name!=null)
-                        throw new Exception($"{position} Name has been declared already");
+                        throw new Exception($"Invalid Token: {token}. Name has been declared already");
                     card.Name = ParseAssignment(true);
                     token= tokens[position];
                     break;
                 case TokenType.TYPE:
                     if(card.Type!=null)
-                        throw new Exception($"{position} Type has been declared already");
+                        throw new Exception($"Invalid Token: {token}. Type has been declared already");
                     card.Type = ParseAssignment(true);
                     token= tokens[position];
                     break;
                 case TokenType.RANGE:
                     if(card.Range!=null)
-                        throw new Exception($"{position} Range has been declared already");
+                        throw new Exception($"Invalid Token: {token}. Range has been declared already");
                     card.Range = ParseRanges();// Manejo para TokenType.RANGE
                     if(tokens[position].Type== TokenType.COMA)
                     position++;
                     else
-                    throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected Comma in range end definition");
+                    throw new Exception($"Invalid Token: {token}. Expected Comma in range end definition");
                     token= tokens[position];
                     break;
                 case TokenType.POWER:
                     if(card.Power!=null)
-                        throw new Exception($"{position} Power has been declared already");
+                        throw new Exception($"Invalid Token: {token}. Power has been declared already");
                     card.Power = ParseAssignment(true);// Manejo para TokenType.POWER
                     token= tokens[position];
                     break;
                 case TokenType.FACTION:
                     if(card.Faction!=null)
-                        throw new Exception($"{position} Faction has been declared already");
+                        throw new Exception($"Invalid Token: {token}. Faction has been declared already");
                     card.Faction = ParseAssignment(true);
                     token= tokens[position];
                     break;
                     case TokenType.ONACTIVATION:
                     if(card.OnActivation!=null)
-                        throw new Exception($"{position} Faction has been declared already");
+                        throw new Exception($"Invalid Token: {token}. Faction has been declared already");
                     card.OnActivation = ParseOnActivation();
                     token= tokens[position];
                     break;
@@ -296,7 +341,7 @@ public class Parser
                         position++;
                         return card;
                 default:
-                    throw new Exception($"{position} Invalid Token at {token.lugar.fila} row and {token.lugar.colmna} column expected card item");
+                    throw new Exception($"Invalid Token: {token}. Expected card item");
             }
         }
         return card;
@@ -319,15 +364,15 @@ public class Parser
                         break;
                     }
                     else
-                        throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected Comma");
+                        throw new Exception($"Invalid Token: {tokens[position]}. Expected Comma");
                 }
                 else
-                    throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected in ");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected in ");
             }
             return ranges;
         }
         else
-            throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column ");
+            throw new Exception($"Invalid Token: {tokens[position]}. ");
     }
     public PredicateExp ParsePredicate(bool fromMethod= false)
     {
@@ -347,7 +392,7 @@ public class Parser
                             return predicate;
                         }
                         else
-                            throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected Comma");
+                            throw new Exception($"Invalid Token: {tokens[position]}. Expected Comma");
                     }
                     else
                     {
@@ -355,11 +400,11 @@ public class Parser
                     }
                 }
                 else
-                    throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected in ");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected in ");
             }
             else
             {
-                throw new Exception("Expected Id");
+                throw new Exception($"Invalid Token: {tokens[position]}. Expected Id");
             }
     }
     private OnActivationExpression ParseOnActivation()
@@ -379,7 +424,7 @@ public class Parser
                 break;
             }
             else
-            throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected ????? in OnActivation");
+            throw new Exception($"Invalid Token: {tokens[position]}. Expected ????? in OnActivation");
         }
         return activation;
     }
@@ -405,7 +450,7 @@ public class Parser
                     if(tokens[position++].Type== TokenType.TWOPOINT)
                     efecto.PostAction = ParseEffectAssignment();// Manejo para TokenType.RANGE
                     else
-                    throw new Exception($"Invalid Token at {tokens[position-1].lugar.fila} row and {tokens[position-1].lugar.colmna} column expected Colon in PostAction statement");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected Colon in PostAction statement");
                     break;
                 case TokenType.RCURLY:
                     if(tokens[++position].Type==TokenType.COMA|| tokens[position].Type==TokenType.POINTCOMA|| tokens[position].Type==TokenType.RBRACKET)
@@ -415,7 +460,7 @@ public class Parser
                     }
                     return efecto;
                 default:
-                    throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected effect assignment item");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected effect assignment item");
             }
         }
         return efecto;
@@ -441,7 +486,7 @@ public class Parser
                     break;
                     }
                     else
-                        throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column ");
+                        throw new Exception($"Invalid Token: {tokens[position]}. Expected Selector property");
                 case TokenType.RCURLY:
                     if(tokens[++position].Type==TokenType.COMA|| tokens[position].Type==TokenType.POINTCOMA||tokens[position].Type==TokenType.RCURLY )
                     {
@@ -450,9 +495,9 @@ public class Parser
                         return selector;
                     }
                     else
-                    throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected in ");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected in ");
                 default:
-                    throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected selector item");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected selector item");
             }
         }
         return selector;
@@ -488,7 +533,7 @@ public class Parser
                 case TokenType.RCURLY:
                 break;
                 default:
-                    throw new Exception($"{position} Invalid Token at {token.lugar.fila} row and {token.lugar.colmna} column expected card item");
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected card item");
             }
             if(token.Type== TokenType.RCURLY)
             {
@@ -514,17 +559,22 @@ public class Parser
             else if(token.Type==TokenType.NAME&& efectito)
             {
                 parameters.Add(ParseAssignment(efectito));
+                token= tokens[position];
             }
-            else if(tokens[position++].Type== TokenType.RCURLY)
-            {
-                if(tokens[position++].Type== TokenType.POINTCOMA|| tokens[position-1].Type== TokenType.COMA)
-                break;
-            }
+            else if(token.Type== TokenType.RCURLY)
+                    if(tokens[++position].Type==TokenType.COMA|| tokens[position].Type==TokenType.POINTCOMA||tokens[position].Type==TokenType.RCURLY )
+                    {
+                        if(tokens[position].Type!=TokenType.RCURLY)
+                        position++;
+                        break;
+                    }
+                    else
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected Comma, SemiColon or Right Curly");
             else
-            throw new Exception($"{position} Invalid Token at {token.lugar.fila} row and {token.lugar.colmna} column expected in Params definition");
+            throw new Exception($"Invalid Token: {token}. Expected declaration sintax in Params definition");
         }
         else
-        throw new Exception($"{position} Invalid Token at {token.lugar.fila} row and {token.lugar.colmna} column expected in ");
+        throw new Exception($"Invalid Token: {token}. Invalid Param Sintax");
         return parameters;
     } 
     private ActionExpression ParseAction()
@@ -548,7 +598,7 @@ public class Parser
                 }
         }
         else
-        throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} on an Action declaration statement");
+        throw new Exception($"Invalid Token: {tokens[position]}. on an Action declaration statement");
         return Action;
     }
     private InstructionBlock ParseInstructionBlock(bool single= false)
@@ -573,7 +623,7 @@ public class Parser
                 break;
             }
             else
-            throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} column expected in Instruction Block definition");
+            throw new Exception($"Invalid Token: {tokens[position]}. Expected in Instruction Block definition");
         }while(true && !single);
         return block;
     }
@@ -585,9 +635,9 @@ public class Parser
         if( tokens[position++].Type== TokenType.ID )
         {//ForExp initial sintaxis
             ForExp.Variable = new IdentifierExpression(tokens[position-1]);
-            if(tokens[position++].Type == TokenType.IN && tokens[position++].Type== TokenType.ID)
+            if(tokens[position++].Type == TokenType.IN)
             {
-                ForExp.Collection= new IdentifierExpression(tokens[position-1]);
+                ForExp.Collection= ParseExpression();
                 if(tokens[position++].Type== TokenType.LCURLY)
                 {
                     ForExp.Instructions=ParseInstructionBlock();
@@ -604,11 +654,11 @@ public class Parser
             }
             else
             {
-                throw new Exception($"{position} Invalid Token at {tokens[position-1].lugar.fila} row and {tokens[position-1].lugar.colmna} column expected in ");
+                throw new Exception($"Invalid Token: {tokens[position]}. Expected IN token");
             }
         }
         else
-        throw new Exception($"{position} Invalid Token at {tokens[position].lugar.fila} row and {tokens[position].lugar.colmna} on a For declaration statement");
+        throw new Exception($"Invalid Token: {tokens[position]}. on a For declaration statement");
         return ForExp;
     }
     private WhileExpression ParseWhile()

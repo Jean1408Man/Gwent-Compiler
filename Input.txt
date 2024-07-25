@@ -1,15 +1,17 @@
 effect {
-    Name: "Boost",
+    Name: "Damage",
     Params: {
-        amount: Number,
-        duration: Number
+        Amount: Number,
     },
-    Action: (targets, context) =>
-        for target in targets {
-            target.Power += amount;
-            context.Board.Shuffle();
-            Context.Find((unit) => unit.Power < 5);
-        }
+    Action: (targets, context) => {
+        i=9;
+        for target in context.Find((rachel)=> rachel.Faction == "Hola") {
+            i = 0;
+            while (i++ < Amount)
+                target.Faction = targets[1].Faction;
+        i= 6;
+        };
+        context.Hand[6+7+i].Power= 5;
+    }
 }
-
 ";

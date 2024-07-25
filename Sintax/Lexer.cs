@@ -66,6 +66,7 @@ public class Lexer {
         { TokenType.LCURLY, @"\{" },
         { TokenType.RCURLY, @"\}" },
         { TokenType.LBRACKET, @"\[" },
+        { TokenType.INDEXER, @"\[" },
         { TokenType.RBRACKET, @"\]" },
         { TokenType.TWOPOINT, @"\:" },
         { TokenType.COMA, @"\," },
@@ -77,8 +78,12 @@ public class Lexer {
         //MathOperator
         { TokenType.PLUSACCUM, @"\+\=" },
         { TokenType.MINUSACCUM, @"\-\=" },
-        { TokenType.INCREEMENT, @"\+\+" },
+        { TokenType.INCREMENT, @"\+\+" },
+        { TokenType.RINCREMENT, @"\+\+" },
+        { TokenType.LINCREMENT, @"\+\+" },
         { TokenType.DECREMENT, @"\-\-" },
+        { TokenType.RDECREMENT, @"\-\-" },
+        { TokenType.LDECREMENT, @"\-\-" },
         { TokenType.PLUS, @"\+" },
         { TokenType.MINUS, @"\-" },
         { TokenType.MULTIPLY, @"\*" },
@@ -110,8 +115,9 @@ public class Lexer {
         { TokenType.MORE_EQ, @">=" },
 
         // Whitespace
-        { TokenType.WHITESPACE, "[ \t\r\n]" },
         { TokenType.LINECHANGE, @"\r" },
+        { TokenType.WHITESPACE, "[ \t\r\n]" },
+        
 
         // Comments
         { TokenType.SINGLECOMMENT, @"//[^\n]*" },
@@ -160,14 +166,18 @@ public class Lexer {
 }
 public enum TokenType
 {
+    LINECHANGE,
     WHITESPACE,
     SINGLECOMMENT,
     MULTICOMMENT,
-    INCREEMENT,
+    INCREMENT,
+    RINCREMENT,
+    LINCREMENT,
     DECREMENT,
+    RDECREMENT,
+    LDECREMENT,
     PLUSACCUM,
     MINUSACCUM,
-    LINECHANGE,
     EFFECTDECLARATION,
     SPACE_CONCATENATION,
     CONCATENATION,
@@ -217,6 +227,7 @@ public enum TokenType
     LCURLY,
     RCURLY,
     LBRACKET,
+    INDEXER,
     RBRACKET,
     POINT,
     TWOPOINT,
