@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\2doProyecto.csproj": {}
+    "D:\\Priv\\Proyecto UH\\Gwent.Pro\\Gwent-Pro\\Assets\\Scripts\\Compilation\\Gwent-Compiler\\2doProyecto.csproj": {}
   },
   "projects": {
-    "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\2doProyecto.csproj": {
+    "D:\\Priv\\Proyecto UH\\Gwent.Pro\\Gwent-Pro\\Assets\\Scripts\\Compilation\\Gwent-Compiler\\2doProyecto.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\2doProyecto.csproj",
+        "projectUniqueName": "D:\\Priv\\Proyecto UH\\Gwent.Pro\\Gwent-Pro\\Assets\\Scripts\\Compilation\\Gwent-Compiler\\2doProyecto.csproj",
         "projectName": "2doProyecto",
-        "projectPath": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\2doProyecto.csproj",
+        "projectPath": "D:\\Priv\\Proyecto UH\\Gwent.Pro\\Gwent-Pro\\Assets\\Scripts\\Compilation\\Gwent-Compiler\\2doProyecto.csproj",
         "packagesPath": "C:\\Users\\luisj\\.nuget\\packages\\",
-        "outputPath": "D:\\Priv\\Proyecto UH\\2doProyecto\\Gwent-Compiler\\obj\\",
+        "outputPath": "D:\\Priv\\Proyecto UH\\Gwent.Pro\\Gwent-Pro\\Assets\\Scripts\\Compilation\\Gwent-Compiler\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\luisj\\AppData\\Roaming\\NuGet\\NuGet.Config",
