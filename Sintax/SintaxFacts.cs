@@ -170,16 +170,34 @@ public enum ValueType
     Program,
     #endregion
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public class Scope
+{
+
+}
+public class SemanticalScope: Scope
 {//No Debuggeado
-    public Scope parentScope;
-    public Scope(Scope Parent= null)
+    public SemanticalScope parentScope;
+    public SemanticalScope(SemanticalScope Parent= null)
     {
         parentScope= Parent;
     }
     public bool WithoutReps=false;
     public Dictionary< Expression , Expression > Variables= new();
-    private void InternalFind(Expression tofind, out Expression Finded, out Scope Where)
+    private void InternalFind(Expression tofind, out Expression Finded, out SemanticalScope Where)
     {
         bool b= false;
         Finded = null;
@@ -208,7 +226,7 @@ public class Scope
     public bool Find(Expression exp, out ValueType? type)
     {
         Expression Finded;
-        Scope Where;
+        SemanticalScope Where;
         InternalFind(exp,out Finded, out Where);
         if(Where!= null)
         {
@@ -224,7 +242,7 @@ public class Scope
     public void AddVar(Expression exp, Expression Value= null)
     {
         Expression Finded;
-        Scope Where;
+        SemanticalScope Where;
         InternalFind(exp,out Finded, out Where);
         if(Where!= null)
         {
@@ -240,5 +258,73 @@ public class Scope
     }
     
 }
+
+public class EvaluateScope: Scope
+{//No Debuggeado
+    public EvaluateScope parentScope;
+    public EvaluateScope(EvaluateScope Parent= null)
+    {
+        parentScope= Parent;
+    }
+    public Dictionary< Expression , object > Variables= new();
+    private void InternalFind(Expression tofind, out Expression Finded, out EvaluateScope Where)
+    {
+        bool b= false;
+        Finded = null;
+        Where = null;
+        foreach(Expression indic in Variables.Keys)
+        {
+            if(tofind.Equals(indic)) 
+            {
+                Where = this;
+                Finded = indic;
+                b=true;
+            }
+        }
+        if(!b)
+        {
+            if(parentScope!=null)
+            {
+                parentScope.InternalFind(tofind, out Finded, out Where);
+            }
+            else{
+                Where = null;
+                Finded = null;
+            }
+        }
+    }
+    public bool Find(Expression exp, out ValueType? type)
+    {
+        Expression Finded;
+        EvaluateScope Where;
+        InternalFind(exp,out Finded, out Where);
+        if(Where!= null)
+        {
+            type= Finded.Type;
+            return true;
+        }
+        else
+        {
+            type = null;
+            return false;
+        }
+    }
+    public void AddVar(Expression exp, object Value= null)
+    {
+        Expression Finded;
+        EvaluateScope Where;
+        InternalFind(exp,out Finded, out Where);
+        if(Where!= null)
+        {
+            Where.Variables[Finded]= Value;
+        }
+        else
+        {
+            Variables.Add(exp,Value);
+        }
+    }
+    
+}
+
 
 
