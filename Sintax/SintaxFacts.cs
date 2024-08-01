@@ -1,6 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
 
-namespace Compiler;
+namespace LogicalSide;
 
 public static class SintaxFacts
 {
@@ -60,40 +60,38 @@ public static class SintaxFacts
         }
     }
     
-    
+    public static string CompilerPhase;
     
     
     public static Dictionary<ValueType?, HashSet<TokenType>> PointPosibbles= new Dictionary<ValueType?, HashSet<TokenType>>
     {
-        {ValueType.Card, new HashSet<TokenType>(){TokenType.NAME, TokenType.OWNER, TokenType.POWER, TokenType.FACTION,TokenType.RANGE, TokenType.TYPE}},
+        {ValueType.Card, new HashSet<TokenType>(){TokenType.Name, TokenType.Owner, TokenType.Power, TokenType.Faction,TokenType.Range, TokenType.Type}},
 
 
-        {ValueType.Context, new HashSet<TokenType>(){TokenType.FIND,TokenType.DECK, TokenType.DECKOFPLAYER, TokenType.GRAVEYARD, TokenType.GRAVEYARDOFPLAYER
-        , TokenType.FIELD,TokenType.FIELDOFPLAYER, TokenType.HAND, TokenType.HANDOFPLAYER,TokenType.BOARD, TokenType.TRIGGERPLAYER}},
+        {ValueType.Context, new HashSet<TokenType>(){TokenType.Find,TokenType.Deck, TokenType.DeckOfPlayer, TokenType.GraveYard, TokenType.GraveYardOfPlayer
+        , TokenType.Field,TokenType.FieldOfPlayer, TokenType.Hand, TokenType.HandOfPlayer,TokenType.Board, TokenType.TriggerPlayer}},
 
         
-        {ValueType.ListCard, new HashSet<TokenType>(){TokenType.FIND, TokenType.PUSH, TokenType.SENDBOTTOM, TokenType.POP, TokenType.SHUFFLE
+        {ValueType.ListCard, new HashSet<TokenType>(){TokenType.Find, TokenType.Push, TokenType.SendBottom, TokenType.Pop, TokenType.Shuffle
         }},
 
     };
     public static Dictionary<TokenType, ValueType> TypeOf = new Dictionary<TokenType, ValueType>
     {
-
-
         //  Strings
-        {TokenType.NAME, ValueType.String},
-        {TokenType.FACTION, ValueType.String},
-        {TokenType.TYPE, ValueType.String},
+        {TokenType.Name, ValueType.String},
+        {TokenType.Faction, ValueType.String},
+        {TokenType.Type, ValueType.String},
         {TokenType.STRINGTYPE, ValueType.String},
         {TokenType.SOURCE, ValueType.String},
         {TokenType.EFFECTASSIGNMENT, ValueType.String},
 
         //Players
-        {TokenType.OWNER, ValueType.Player},
-        {TokenType.TRIGGERPLAYER, ValueType.ListCard},
+        {TokenType.Owner, ValueType.Player},
+        {TokenType.TriggerPlayer, ValueType.ListCard},
         
         //Numbers
-        {TokenType.POWER, ValueType.Number},
+        {TokenType.Power, ValueType.Number},
         {TokenType.PLUS, ValueType.Number},
         {TokenType.MINUS, ValueType.Number},
         {TokenType.NUMBERTYPE, ValueType.Number},
@@ -107,25 +105,25 @@ public static class SintaxFacts
         {TokenType.SINGLE, ValueType.Boolean},
         
         // List Cards
-        {TokenType.DECK, ValueType.ListCard},
-        {TokenType.DECKOFPLAYER, ValueType.ListCard},
-        {TokenType.GRAVEYARD, ValueType.ListCard},
-        {TokenType.GRAVEYARDOFPLAYER, ValueType.ListCard},
-        {TokenType.FIELD, ValueType.ListCard},
-        {TokenType.FIELDOFPLAYER, ValueType.ListCard},
-        {TokenType.HAND, ValueType.ListCard},
-        {TokenType.HANDOFPLAYER, ValueType.ListCard},
-        {TokenType.BOARD, ValueType.ListCard},
-        {TokenType.FIND, ValueType.ListCard},
+        {TokenType.Deck, ValueType.ListCard},
+        {TokenType.DeckOfPlayer, ValueType.ListCard},
+        {TokenType.GraveYard, ValueType.ListCard},
+        {TokenType.GraveYardOfPlayer, ValueType.ListCard},
+        {TokenType.Field, ValueType.ListCard},
+        {TokenType.FieldOfPlayer, ValueType.ListCard},
+        {TokenType.Hand, ValueType.ListCard},
+        {TokenType.HandOfPlayer, ValueType.ListCard},
+        {TokenType.Board, ValueType.ListCard},
+        {TokenType.Find, ValueType.ListCard},
         
         //Cards
-        {TokenType.POP, ValueType.Card},
+        {TokenType.Pop, ValueType.Card},
         
         //Voids
-        {TokenType.SENDBOTTOM, ValueType.Void},
-        {TokenType.PUSH, ValueType.Void},
-        {TokenType.SHUFFLE, ValueType.Void},
-        {TokenType.ADD, ValueType.Void},
+        {TokenType.SendBottom, ValueType.Void},
+        {TokenType.Push, ValueType.Void},
+        {TokenType.Shuffle, ValueType.Void},
+        {TokenType.Add, ValueType.Void},
 
     };
 
@@ -170,12 +168,6 @@ public enum ValueType
     Program,
     #endregion
 }
-
-
-
-
-
-
 
 
 
@@ -293,14 +285,14 @@ public class EvaluateScope: Scope
             }
         }
     }
-    public bool Find(Expression exp, out ValueType? type)
+    public bool Find(Expression exp, out object type)
     {
         Expression Finded;
         EvaluateScope Where;
         InternalFind(exp,out Finded, out Where);
         if(Where!= null)
         {
-            type= Finded.Type;
+            type= Finded.Value;
             return true;
         }
         else

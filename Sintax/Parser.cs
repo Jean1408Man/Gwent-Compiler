@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace Compiler;
+namespace LogicalSide;
 
 public class Parser
 {
@@ -18,6 +18,7 @@ public class Parser
     }
     public Expression Parse()
     {
+        SintaxFacts.CompilerPhase= "Parser";
         Expression expression;
         expression = ParseProgram();
         return expression;
@@ -64,7 +65,7 @@ public class Parser
                 tokens[position].Type= TokenType.LDECREMENT;
             Token token= tokens[position];
             position++;
-            Expression expr = ParsePrimaryExpression(); 
+            Expression expr = ParsePrimaryExpression();
             returned= new UnaryOperator(expr, token);
         }
         
@@ -80,13 +81,13 @@ public class Parser
             returned= new IdentifierExpression(tokens[position - 1]);
         }
         
-        else if (tokens[position].Type == TokenType.NAME || tokens[position].Type == TokenType.TYPE 
-                ||tokens[position].Type == TokenType.FACTION ||tokens[position].Type == TokenType.POWER 
+        else if (tokens[position].Type == TokenType.Name || tokens[position].Type == TokenType.Type 
+                ||tokens[position].Type == TokenType.Faction ||tokens[position].Type == TokenType.Power 
                 ||tokens[position].Type == TokenType.EFFECTASSIGNMENT || tokens[position].Type == TokenType.SOURCE 
-                ||tokens[position].Type == TokenType.SINGLE||tokens[position].Type == TokenType.OWNER
-                ||tokens[position].Type == TokenType.DECK||tokens[position].Type == TokenType.GRAVEYARD
-                ||tokens[position].Type == TokenType.FIELD||tokens[position].Type == TokenType.BOARD
-                ||tokens[position].Type == TokenType.HAND)
+                ||tokens[position].Type == TokenType.SINGLE||tokens[position].Type == TokenType.Owner
+                ||tokens[position].Type == TokenType.Deck||tokens[position].Type == TokenType.GraveYard
+                ||tokens[position].Type == TokenType.Field||tokens[position].Type == TokenType.Board
+                ||tokens[position].Type == TokenType.Hand)
         {
             position++; 
             returned= new IdentifierExpression(tokens[position - 1]);
@@ -115,7 +116,7 @@ public class Parser
         }
         #endregion
         #region Funciones
-        else if (tokens[position].Type == TokenType.SHUFFLE||tokens[position].Type == TokenType.POP)
+        else if (tokens[position].Type == TokenType.Shuffle||tokens[position].Type == TokenType.Pop)
         {//Functions without parameters
             Token token= tokens[position];
             if(tokens[++position].Type== TokenType.LPAREN && tokens[++position].Type== TokenType.RPAREN)
@@ -125,17 +126,17 @@ public class Parser
             }
             throw new Exception($"Invalid Token: {tokens[position]}. Expected a none parameters method sintax");
         }
-        else if (tokens[position].Type == TokenType.PUSH ||
-                tokens[position].Type == TokenType.SENDBOTTOM||tokens[position].Type == TokenType.REMOVE
-                ||tokens[position].Type == TokenType.HANDOFPLAYER||tokens[position].Type == TokenType.DECKOFPLAYER
-                ||tokens[position].Type == TokenType.FIELDOFPLAYER||tokens[position].Type == TokenType.GRAVEYARDOFPLAYER
-                ||tokens[position].Type == TokenType.ADD||tokens[position].Type == TokenType.FIND)
+        else if (tokens[position].Type == TokenType.Push ||
+                tokens[position].Type == TokenType.SendBottom||tokens[position].Type == TokenType.Remove
+                ||tokens[position].Type == TokenType.HandOfPlayer||tokens[position].Type == TokenType.DeckOfPlayer
+                ||tokens[position].Type == TokenType.FieldOfPlayer||tokens[position].Type == TokenType.GraveYardOfPlayer
+                ||tokens[position].Type == TokenType.Add||tokens[position].Type == TokenType.Find)
                 {//Functions with parameters
                     Token token= tokens[position];
                     if(tokens[++position].Type== TokenType.LPAREN)
                     {
                         Expression argument;
-                        if(token.Type!= TokenType.FIND)
+                        if(token.Type!= TokenType.Find)
                         {
                             position++;
                             argument = ParseExpression();
@@ -297,19 +298,19 @@ public class Parser
         {
             switch (token.Type)
             {
-                case TokenType.NAME:
+                case TokenType.Name:
                     if(card.Name!=null)
                         throw new Exception($"Invalid Token: {token}. Name has been declared already");
                     card.Name = ParseAssignment(true);
                     token= tokens[position];
                     break;
-                case TokenType.TYPE:
+                case TokenType.Type:
                     if(card.Type!=null)
                         throw new Exception($"Invalid Token: {token}. Type has been declared already");
                     card.Type = ParseAssignment(true);
                     token= tokens[position];
                     break;
-                case TokenType.RANGE:
+                case TokenType.Range:
                     if(card.Range!=null)
                         throw new Exception($"Invalid Token: {token}. Range has been declared already");
                     card.Range = ParseRanges();// Manejo para TokenType.RANGE
@@ -319,13 +320,13 @@ public class Parser
                     throw new Exception($"Invalid Token: {token}. Expected Comma in range end definition");
                     token= tokens[position];
                     break;
-                case TokenType.POWER:
+                case TokenType.Power:
                     if(card.Power!=null)
                         throw new Exception($"Invalid Token: {token}. Power has been declared already");
                     card.Power = ParseAssignment(true);// Manejo para TokenType.POWER
                     token= tokens[position];
                     break;
-                case TokenType.FACTION:
+                case TokenType.Faction:
                     if(card.Faction!=null)
                         throw new Exception($"Invalid Token: {token}. Faction has been declared already");
                     card.Faction = ParseAssignment(true);
@@ -518,11 +519,11 @@ public class Parser
         {
             switch (token.Type)
             {
-                case TokenType.NAME:
+                case TokenType.Name:
                     effect.Name = ParseAssignment(true);
                     token= tokens[position];
                     break;
-                case TokenType.PARAMS:
+                case TokenType.Params:
                     effect.Params = ParseParams(false);
                     token= tokens[position];
                     break;
@@ -556,7 +557,7 @@ public class Parser
                 parameters.Add(ParseAssignment(efectito));
                 token = tokens[position];
             }
-            else if(token.Type==TokenType.NAME&& efectito)
+            else if(token.Type==TokenType.Name&& efectito)
             {
                 parameters.Add(ParseAssignment(efectito));
                 token= tokens[position];

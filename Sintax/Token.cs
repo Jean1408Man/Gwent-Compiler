@@ -1,5 +1,5 @@
-namespace Compiler
-{
+namespace LogicalSide;
+
     public class Token 
     {
         public TokenType Type { get; set;}
@@ -15,4 +15,3 @@ namespace Compiler
             return "Type: \"" + Type.ToString() + "\" Value: \"" + Value+ "\" Position: \"" + lugar.fila +"\" row \""+ lugar.colmna +"\" column";
         }
     }
-}

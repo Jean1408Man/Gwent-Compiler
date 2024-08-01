@@ -1,8 +1,7 @@
-﻿using Compiler;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Compiler
+namespace LogicalSide
 {
     public class Program
     {

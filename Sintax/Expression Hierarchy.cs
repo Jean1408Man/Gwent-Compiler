@@ -1,12 +1,39 @@
 using System.Drawing;
 using System.Reflection.Metadata;
+using System.Reflection;
 
-namespace Compiler;
+namespace LogicalSide;
 
  public abstract class Expression
  {
-    public object? Value;
-    public SemanticalScope? Scope;
+    #region EvaluateSection
+    public object _value;
+    public object? Value
+    {
+        get
+        {
+            if(_value==null)
+            {
+                _value = Evaluate(Evaluator);
+                return _value;
+            }
+            else
+            return _value;
+        } 
+        set
+        {
+            _value= value;
+        }
+    }
+    public object? GetValue(EvaluateScope ev)
+    {
+        Evaluator= ev;
+        return Value;
+    }
+    #endregion
+    
+    public SemanticalScope? SemanticScope;
+    public EvaluateScope? Evaluator;
     public ValueType? Type; 
     public string? printed;
     public virtual void Print(int indentLevel = 0)
@@ -17,7 +44,7 @@ namespace Compiler;
         Console.WriteLine(new string(' ', indentLevel * 4) +"Token: "+ printed);
     }
     public abstract ValueType? Semantic(SemanticalScope scope);
-    public abstract object Evaluate(EvaluateScope scope);
+    public abstract object Evaluate(EvaluateScope scope,object Before= null);
  }
 public class ProgramExpression: Expression
 {
@@ -27,7 +54,7 @@ public class ProgramExpression: Expression
         EffectsAndCards= new();
         printed = "Program";
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -67,7 +94,7 @@ public class EffectDeclarationExpr: Expression
     public Expression? Name;
     public List<Expression>? Params;
     public Expression? Action;
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -78,7 +105,7 @@ public class EffectDeclarationExpr: Expression
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {//Dependiendo de si queremos que Name sea accesible dentro del Action se pasarará Scope o scope, asumo por ahora que no
-        Scope = new SemanticalScope(scope);
+        SemanticScope = new SemanticalScope(scope);
         
         #region Name
         if(Name== null || Name.Semantic(scope)!= ValueType.String)
@@ -90,17 +117,17 @@ public class EffectDeclarationExpr: Expression
         #region Params
         if(Params!= null)
         {
-            Scope.WithoutReps=true;
+            SemanticScope.WithoutReps=true;
             foreach(Expression exp in Params)
             {
-                exp.Semantic(Scope);
+                exp.Semantic(SemanticScope);
             }
-            Scope.WithoutReps=false;
+            SemanticScope.WithoutReps=false;
         }
         #endregion
         
         #region Action
-        if(Action== null || Action.Semantic(Scope)!= ValueType.Action)
+        if(Action== null || Action.Semantic(SemanticScope)!= ValueType.Action)
         {
             throw new Exception("Semantic Error, Expected Action Type");
         }
@@ -111,7 +138,7 @@ public class EffectDeclarationExpr: Expression
 public class InstructionBlock: Expression
 {
     public List<Expression>? Instructions= new();
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -136,26 +163,26 @@ public class ActionExpression: Expression
     public IdentifierExpression? Targets;
     public IdentifierExpression? Context;
     public InstructionBlock? Instructions;
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        Scope = new SemanticalScope(scope);
+        SemanticScope = new SemanticalScope(scope);
         if(Targets != null)
         {
             Targets.Type= ValueType.ListCard;
-            Scope.AddVar(Targets,Targets);
+            SemanticScope.AddVar(Targets,Targets);
         }
         else throw new Exception("Semantic Error, Targets is Empty");
         if(Context != null)
         {
             Context.Type= ValueType.Context;
-            Scope.AddVar(Context,Context);
+            SemanticScope.AddVar(Context,Context);
         }
         else throw new Exception("Semantic Error, Context is Empty");
-        if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+        if(!(Instructions.Semantic(SemanticScope)== ValueType.InstructionBlock))
             throw new Exception("Semantic Error, Expected Instruction Block Type");
         return ValueType.Action;
     }
@@ -171,28 +198,28 @@ public class ForExpression: Expression
     public IdentifierExpression? Variable;
     public Expression? Collection;
 
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        Scope = new SemanticalScope(scope);
+        SemanticScope = new SemanticalScope(scope);
         if(Variable != null)
         {
             Variable.Type= ValueType.Card;
-            Scope.AddVar(Variable,Variable);
+            SemanticScope.AddVar(Variable,Variable);
         }
         else throw new Exception("Semantic Error, For Variable is Empty");
         if(Collection != null)
         {
             Collection.Type= ValueType.ListCard;
-            Scope.AddVar(Collection,Collection);
+            SemanticScope.AddVar(Collection,Collection);
         }
         else throw new Exception("Semantic Error, For Collection is Empty");
         if(Instructions != null)
         {
-            if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+            if(!(Instructions.Semantic(SemanticScope)== ValueType.InstructionBlock))
                 throw new Exception("Semantic Error, Expected Instruction Block Type, at a for Expression");
         }
         return ValueType.For;
@@ -208,13 +235,13 @@ public class WhileExpression: Expression
     public InstructionBlock? Instructions= new();
     public Expression? Condition;
 
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        Scope = new SemanticalScope(scope);
+        SemanticScope = new SemanticalScope(scope);
         if(Condition != null)
         {
             Condition.Type= Condition.Semantic(scope);
@@ -222,7 +249,7 @@ public class WhileExpression: Expression
                 throw new Exception("Semantic Error, Expected Boolean Type in While Condition");
         }
         else throw new Exception("Semantic Error, Condition is Empty");
-        if(!(Instructions.Semantic(Scope)== ValueType.InstructionBlock))
+        if(!(Instructions.Semantic(SemanticScope)== ValueType.InstructionBlock))
             throw new Exception("Semantic Error, Expected Instruction Block Type");
         return ValueType.Action;
     }
@@ -256,7 +283,7 @@ public class CardExpression: Expression
     public List<Expression>? Range;
     public OnActivationExpression? OnActivation;
 
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -323,7 +350,7 @@ public class PredicateExp: Expression
     {
         printed = "Predicate";
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -340,7 +367,7 @@ public class PredicateExp: Expression
 public class OnActivationExpression: Expression
 {
     public List<EffectAssignment>? Effects= new();
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -366,24 +393,24 @@ public class EffectAssignment: Expression
     public List<Expression>? Effect = new();
     public SelectorExpression? Selector;
     public EffectAssignment? PostAction;
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        Scope = new SemanticalScope();
+        SemanticScope = new SemanticalScope();
         #region Effect
         if(Effect== null)
         {
             throw new Exception("Semantic Error, Effect is Empty, must contain at least a name");
         }
-        Scope.WithoutReps=true;
+        SemanticScope.WithoutReps=true;
         foreach(Expression? statements in Effect)
         {
-            ValueType? tipo= statements.Semantic(Scope);
+            ValueType? tipo= statements.Semantic(SemanticScope);
         }
-        Scope.WithoutReps=false;
+        SemanticScope.WithoutReps=false;
         #endregion
         
         #region Selector
@@ -411,7 +438,7 @@ public class SelectorExpression: Expression
     public Expression? Source;
     public Expression? Single;
     public Expression? Predicate;
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -458,6 +485,9 @@ public class SelectorExpression: Expression
 
 
 #region FirstExpressions
+public abstract class FirstExpressions: Expression
+{
+}
 public class BinaryOperator : Expression
 {
     public Expression Left { get; set; }
@@ -473,7 +503,11 @@ public class BinaryOperator : Expression
         this.printed = Op.ToString();
     }
     public override bool Equals(object? obj)
-    {
+    {// Si estamos en fase evaluate, entonces debemos comparar en cuanto a valor de la expression
+        if(obj is Expression objexp)
+        if(SintaxFacts.CompilerPhase== "Evaluate")
+            return Value.Equals(objexp.Value);
+        else
         if(obj is BinaryOperator bin && bin.Left.Equals(this.Left) && bin.Right.Equals(this.Right) && bin.Operator== this.Operator&& this.Operator== TokenType.POINT)
         {//Ambos deben ser ids y deben tener el mismo nombre
             return true;
@@ -560,17 +594,17 @@ public class BinaryOperator : Expression
             case TokenType.POINT:
             ValueType? type = Left.Semantic(scope);
             Left.Type= type;
-            if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.Value.Type))
+            if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.ValueAsToken.Type))
             {
                 type= right.Semantic(scope);
                 Right.Type= type;
-                return SintaxFacts.TypeOf[right.Value.Type];
+                return SintaxFacts.TypeOf[right.ValueAsToken.Type];
             }
             else if(type != ValueType.Null && Right is BinaryOperator binary && binary.Operator== TokenType.INDEXER )
             {
-                if(binary.Left is Terminal T && SintaxFacts.PointPosibbles[type].Contains(T.Value.Type))
+                if(binary.Left is Terminal T && SintaxFacts.PointPosibbles[type].Contains(T.ValueAsToken.Type))
                 {//Chequeo que en el indexado la parte izquierda sea únicamente un terminal, de lo contrario se usaron paréntesis, lo cual no es permitido
-                    binary.Left.Type= SintaxFacts.TypeOf[T.Value.Type];
+                    binary.Left.Type= SintaxFacts.TypeOf[T.ValueAsToken.Type];
                     type = binary.Semantic(scope);
                     return type; 
                 }
@@ -629,63 +663,69 @@ public class BinaryOperator : Expression
             throw new Exception("Invalid Operator"+ Operator);
         }
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         switch(Operator)
         {
              //Acums
             case TokenType.PLUSACCUM:
-            Left.Value= (double)Left.Value! + (double)Right.Evaluate(scope);
+            Left.Value= (int)Left.Value! + (int)Right.Evaluate(scope);
             return Left.Value;
             case TokenType.MINUSACCUM:
-            Left.Value= (double)Left.Value!- (double)Right.Evaluate(scope);
+            Left.Value= (int)Left.Value!- (int)Right.Evaluate(scope);
             return Left.Value;
             // Math
             case TokenType.PLUS:
-            return (double)Left.Evaluate(scope) + (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) + (int)Right.Evaluate(scope);
             case TokenType.MINUS:
-            return (double)Left.Evaluate(scope) - (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) - (int)Right.Evaluate(scope);
             case TokenType.MULTIPLY:
-            return (double)Left.Evaluate(scope) * (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) * (int)Right.Evaluate(scope);
             case TokenType.DIVIDE:
-            return (double)Left.Evaluate(scope) / (double)Right.Evaluate(scope);
+            int r= (int)Right.Evaluate(scope);
+            if(r!= 0)
+            return (int)Left.Evaluate(scope) / (int)Right.Evaluate(scope);
+            else
+            throw new Exception($"Division by cero {Operator}");
+            
             case TokenType.POW:
-            return Math.Pow((double)Left.Evaluate(scope), (double)Right.Evaluate(scope));
+            return Math.Pow((int)Left.Evaluate(scope), (int)Right.Evaluate(scope));
             // Booleans
             case TokenType.EQUAL:
             return SintaxFacts.EqualTerm(Left.Evaluate(scope), Right.Evaluate(scope));
             case TokenType.LESS_EQ:
-            return (double)Left.Evaluate(scope) <= (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) <= (int)Right.Evaluate(scope);
             case TokenType.MORE_EQ:
-            return (double)Left.Evaluate(scope) >= (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) >= (int)Right.Evaluate(scope);
             case TokenType.MORE:
-            return (double)Left.Evaluate(scope) > (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) > (int)Right.Evaluate(scope);
             case TokenType.LESS:
-            return (double)Left.Evaluate(scope) < (double)Right.Evaluate(scope);
+            return (int)Left.Evaluate(scope) < (int)Right.Evaluate(scope);
             case TokenType.AND:
             return (bool)Left.Evaluate(scope) && (bool)Right.Evaluate(scope);
             case TokenType.OR:
             return (bool)Left.Evaluate(scope) || (bool)Right.Evaluate(scope);
-            // String
+            // String   *+
             case TokenType.CONCATENATION:
             return (string)Left.Evaluate(scope) + (string)Right.Evaluate(scope);
             case TokenType.SPACE_CONCATENATION:
             return (string)Left.Evaluate(scope) +" "+ (string)Right.Evaluate(scope);
             // Point            
             case TokenType.POINT:
+            //Establecer una logica mediante la cual teniendo el nombre del objeto y el nombre de su propiedad se pueda acceder a él...
             ValueType? type = Left.Semantic(scope);
             Left.Type= type;
-            if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.Value.Type))
+            if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.ValueAsToken.Type))
             {
                 type= right.Semantic(scope);
                 Right.Type= type;
-                return SintaxFacts.TypeOf[right.Value.Type];
+                return SintaxFacts.TypeOf[right.ValueAsToken.Type];
             }
             else if(type != ValueType.Null && Right is BinaryOperator binary && binary.Operator== TokenType.INDEXER )
             {
-                if(binary.Left is Terminal T && SintaxFacts.PointPosibbles[type].Contains(T.Value.Type))
+                if(binary.Left is Terminal T && SintaxFacts.PointPosibbles[type].Contains(T.ValueAsToken.Type))
                 {//Chequeo que en el indexado la parte izquierda sea únicamente un terminal, de lo contrario se usaron paréntesis, lo cual no es permitido
-                    binary.Left.Type= SintaxFacts.TypeOf[T.Value.Type];
+                    binary.Left.Type= SintaxFacts.TypeOf[T.ValueAsToken.Type];
                     type = binary.Semantic(scope);
                     return type; 
                 }
@@ -695,25 +735,15 @@ public class BinaryOperator : Expression
                 throw new Exception("Semantic from Point");
             //Indexer
             case TokenType.INDEXER:
-            if(Left.Type!= ValueType.ListCard)
+            if(Left.Value is List<object> list)
             {
-                if(Left.Semantic(scope)== ValueType.ListCard)
-                {
-                    Left.Type= ValueType.ListCard;
-                }
-                else
-                    throw new Exception("Semantic, tried to index a non ListCard item");
+                int index= (int)Right.Value;
+                if(index< list.Count)
+                    return list[index];
+                else 
+                    throw new Exception($"Evaluate Error at Indexer, because index out of range of List");
             }
-            if(Right.Semantic(scope)== ValueType.Number)
-            {
-                Right.Type= ValueType.Number;
-                return ValueType.Card;
-            }
-            else
-            {
-                throw new Exception("Semantic, tried to index by a non numerical expression");
-            }
-
+            else throw new Exception($"Evaluate Error at Indexer, {Left.Type} must be List Type");
             //Two Points
             case TokenType.ASSIGN:
             case TokenType.TWOPOINT:
@@ -729,13 +759,13 @@ public class BinaryOperator : Expression
 public class Terminal: Expression
 {
     public string? ValueForPrint;
-    public Token Value { get; }
+    public Token ValueAsToken { get; }
     public Terminal(Token token)
     {
         this.ValueForPrint = token.Value;
-        Value= token;
+        ValueAsToken= token;
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -745,7 +775,11 @@ public class Terminal: Expression
     }
     public override bool Equals(object? obj)
     {
-        if(obj is Terminal id && id.Value.Value== this.Value.Value)
+        if(obj is Expression exp && SintaxFacts.CompilerPhase== "Evaluate"&& ValueAsToken== exp.Value)
+        {
+            return true;
+        }
+        if(SintaxFacts.CompilerPhase== "Semantic" && obj is Terminal id && id.ValueAsToken.Value== this.ValueAsToken.Value)
         {//Ambos deben ser ids y deben tener el mismo nombre 
             return true;
         }
@@ -764,21 +798,73 @@ public class UnaryOperator : Terminal
         Operator = Op.Type;
         printed= "Unary Operator---"+ Operator;
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
+        if(Operand!= null)
         switch(Operator)
         {
+            //Card Argument
+            case TokenType.SendBottom:
+            case TokenType.Remove:
+            case TokenType.Push:
+            case TokenType.Add:
+            Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope));
+            return null;
+            //Player Argument
+            case TokenType.HandOfPlayer:
+            case TokenType.DeckOfPlayer:
+            case TokenType.GraveYardOfPlayer:
+            case TokenType.FieldOfPlayer:
+            case TokenType.Find:
+            Value= Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope));
+            return Value;
+            //Numbers
+            case TokenType.RDECREMENT:
+            Value= (int)Operand.Evaluate(scope)-1;
+            return (int)Value+1;
+            case TokenType.LDECREMENT:
+            Value= (int)Operand.Evaluate(scope)-1;
+            return (int)Value+1;
+            case TokenType.RINCREMENT:
+            Value= (int)Operand.Evaluate(scope)+1;
+            return (int)Value-1;
+            case TokenType.LINCREMENT:
+            Value= (int)Operand.Evaluate(scope)+1;
+            return (int)Value;
+            case TokenType.MINUS:
+            Value= (int)Operand.Evaluate(scope)*-1;
+            return (int)Value-1;
+            case TokenType.PLUS:
+            Value= Operand.Evaluate(scope);
+            return Value;
+            //Boolean
             case TokenType.NOT:
-                return !(bool)Operand.Evaluate(scope);
-            default:
-            throw new Exception("Unknown unary operator");
+            {
+                Value= Operand.Evaluate(scope);
+                return !(bool)Value;
+            }
+            
+            
         }
+        if(SintaxFacts.TypeOf.ContainsKey(Operator))
+        {
+            Type = SintaxFacts.TypeOf[Operator];
+            return Type;
+        }
+        throw new Exception("Invalid Unary Operator");
     }
     public override bool Equals(object? obj)
     {
-        if(obj is UnaryOperator unary && unary.Operator.Equals(this.Operator) && unary.Operand.Equals(this.Operand))
+        if(obj is UnaryOperator unary && unary.Operator.Equals(this.Operator) )
         {
-            return true;
+            if(SintaxFacts.CompilerPhase== "Evaluate"&& Operand.Value== unary.Operand.Value)
+            {
+                return true;
+            }
+            else if(SintaxFacts.CompilerPhase== "Semantic" && unary.Operand.Equals(this.Operand))
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -788,19 +874,19 @@ public class UnaryOperator : Terminal
         switch(Operator)
         {
             //Card Argument
-            case TokenType.SENDBOTTOM:
-            case TokenType.REMOVE:
-            case TokenType.PUSH:
-            case TokenType.ADD:
+            case TokenType.SendBottom:
+            case TokenType.Remove:
+            case TokenType.Push:
+            case TokenType.Add:
             if(Operand.Semantic(scope)==ValueType.Card)
                 return ValueType.Card;
             else
                 throw new Exception("Semantic Error, Expected Card Type");
             //Player Argument
-            case TokenType.HANDOFPLAYER:
-            case TokenType.DECKOFPLAYER:
-            case TokenType.GRAVEYARDOFPLAYER:
-            case TokenType.FIELDOFPLAYER:
+            case TokenType.HandOfPlayer:
+            case TokenType.DeckOfPlayer:
+            case TokenType.GraveYardOfPlayer:
+            case TokenType.FieldOfPlayer:
             if(Operand.Semantic(scope)==ValueType.Player)
                 return ValueType.Player;
             else
@@ -810,6 +896,8 @@ public class UnaryOperator : Terminal
             case TokenType.LDECREMENT:
             case TokenType.RINCREMENT:
             case TokenType.LINCREMENT:
+            case TokenType.MINUS:
+            case TokenType.PLUS:
             {
                 if(Operand.Semantic(scope)==ValueType.Number)
                     return ValueType.Number;
@@ -825,7 +913,7 @@ public class UnaryOperator : Terminal
                 else
                     throw new Exception("Semantic Error, Expected Boolean Type");
             }
-            case TokenType.FIND:
+            case TokenType.Find:
             if(Operand.Semantic(scope)!= ValueType.Predicate)
             {
                 throw new Exception("Semantic Error, Expected Predicate Type");
@@ -847,13 +935,13 @@ public class Number: Terminal
     {
         this.printed= "Number";
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
-        return Convert.ToDouble(Value.Value);
+        return Convert.ToDouble(ValueAsToken.Value);
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        this.Scope = scope;
+        this.SemanticScope = scope;
         Type = ValueType.Number;
         return Type;
     }
@@ -864,20 +952,17 @@ public class BooleanLiteral : Terminal
     {
         this.printed = "Boolean";
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
-        return Convert.ToBoolean(Value.Value);
+        return Convert.ToBoolean(ValueAsToken.Value);
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        this.Scope = scope;
+        this.SemanticScope = scope;
         Type = ValueType.Boolean;
         return Type;
     }
 }
-
- 
-
 public class IdentifierExpression : Terminal
 {
     public IdentifierExpression(Token token):base(token)
@@ -886,9 +971,9 @@ public class IdentifierExpression : Terminal
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        if(SintaxFacts.TypeOf.ContainsKey(Value.Type))
+        if(SintaxFacts.TypeOf.ContainsKey(ValueAsToken.Type))
         {
-            Type= SintaxFacts.TypeOf[Value.Type];
+            Type= SintaxFacts.TypeOf[ValueAsToken.Type];
             return Type;
         }
         else
@@ -906,6 +991,16 @@ public class IdentifierExpression : Terminal
             }
         }
     }
+    public override object Evaluate(EvaluateScope scope,object Before= null)
+    {
+        object value= null;
+        if(ValueAsToken!= null)
+        {
+            scope.Find(this, out value);
+            return value;
+        }
+        else return value;
+    }
 }
 public class StringExpression : Terminal
 {
@@ -913,13 +1008,13 @@ public class StringExpression : Terminal
     {
         this.printed = "STRING"; // O alguna otra forma de representar el identificador visualmente
     }
-    public override object Evaluate(EvaluateScope scope)
+    public override object Evaluate(EvaluateScope scope,object Before= null)
     {
-        return Value.Value.Substring(1,Value.Value.Length-2);
+        return ValueAsToken.Value.Substring(1,ValueAsToken.Value.Length-2);
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
-        this.Scope = scope;
+        this.SemanticScope = scope;
         Type = ValueType.String;
         return Type;
     }

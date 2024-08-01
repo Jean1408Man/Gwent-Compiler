@@ -1,4 +1,4 @@
-namespace Compiler;
+namespace LogicalSide;
 
 public class Evaluator
 {
@@ -9,6 +9,7 @@ public class Evaluator
     Expression root;
     public object Evaluate()
     {
-        return root.Evaluate();
+        SintaxFacts.CompilerPhase= "Evaluate";
+        return root.Evaluate(null);
     }
 }
