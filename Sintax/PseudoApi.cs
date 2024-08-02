@@ -3,6 +3,25 @@ namespace LogicalSide;
 
 public static class Api
 {
+    public static object GetProperty<T>(T obj, string propertyName)
+    {
+        // Get the type of the object
+        Type type = typeof(T);
+
+        // Find the PropertyInfo by name
+        PropertyInfo propertyInfo = type.GetProperty(propertyName);
+
+        // Check if the property exists
+        if (propertyInfo != null)
+        {
+            // Set the value of the property
+            return propertyInfo.GetValue(obj);
+        }
+        else
+        {
+            throw new Exception("Problems with Api, property name not found");
+        }
+    }
     public static void SetProperty<T>(T obj, string propertyName, object value)
     {
         // Get the type of the object

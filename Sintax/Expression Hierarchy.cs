@@ -44,7 +44,7 @@ namespace LogicalSide;
         Console.WriteLine(new string(' ', indentLevel * 4) +"Token: "+ printed);
     }
     public abstract ValueType? Semantic(SemanticalScope scope);
-    public abstract object Evaluate(EvaluateScope scope,object Before= null);
+    public abstract object Evaluate(EvaluateScope scope,object Set, object Before= null);
  }
 public class ProgramExpression: Expression
 {
@@ -54,7 +54,7 @@ public class ProgramExpression: Expression
         EffectsAndCards= new();
         printed = "Program";
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -94,7 +94,7 @@ public class EffectDeclarationExpr: Expression
     public Expression? Name;
     public List<Expression>? Params;
     public Expression? Action;
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -138,7 +138,7 @@ public class EffectDeclarationExpr: Expression
 public class InstructionBlock: Expression
 {
     public List<Expression>? Instructions= new();
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -163,7 +163,7 @@ public class ActionExpression: Expression
     public IdentifierExpression? Targets;
     public IdentifierExpression? Context;
     public InstructionBlock? Instructions;
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -198,7 +198,7 @@ public class ForExpression: Expression
     public IdentifierExpression? Variable;
     public Expression? Collection;
 
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -235,7 +235,7 @@ public class WhileExpression: Expression
     public InstructionBlock? Instructions= new();
     public Expression? Condition;
 
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -283,7 +283,7 @@ public class CardExpression: Expression
     public List<Expression>? Range;
     public OnActivationExpression? OnActivation;
 
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -350,7 +350,7 @@ public class PredicateExp: Expression
     {
         printed = "Predicate";
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -367,7 +367,7 @@ public class PredicateExp: Expression
 public class OnActivationExpression: Expression
 {
     public List<EffectAssignment>? Effects= new();
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -393,7 +393,7 @@ public class EffectAssignment: Expression
     public List<Expression>? Effect = new();
     public SelectorExpression? Selector;
     public EffectAssignment? PostAction;
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -438,7 +438,7 @@ public class SelectorExpression: Expression
     public Expression? Source;
     public Expression? Single;
     public Expression? Predicate;
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -485,9 +485,6 @@ public class SelectorExpression: Expression
 
 
 #region FirstExpressions
-public abstract class FirstExpressions: Expression
-{
-}
 public class BinaryOperator : Expression
 {
     public Expression Left { get; set; }
@@ -663,83 +660,136 @@ public class BinaryOperator : Expression
             throw new Exception("Invalid Operator"+ Operator);
         }
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         switch(Operator)
         {
              //Acums
             case TokenType.PLUSACCUM:
-            Left.Value= (int)Left.Value! + (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope, Set,Before);
+            Left.Value= (int)Left.Value! + (int)Right.Value;
+            this.Value= Left.Value;
             return Left.Value;
+
             case TokenType.MINUSACCUM:
-            Left.Value= (int)Left.Value!- (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope, Set,Before);
+            Left.Value= (int)Left.Value!- (int)Right.Value;
+            this.Value= Left.Value;
             return Left.Value;
+
+
+
+
             // Math
             case TokenType.PLUS:
-            return (int)Left.Evaluate(scope) + (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) + (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.MINUS:
-            return (int)Left.Evaluate(scope) - (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) - (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.MULTIPLY:
-            return (int)Left.Evaluate(scope) * (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) * (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.DIVIDE:
-            int r= (int)Right.Evaluate(scope);
-            if(r!= 0)
-            return (int)Left.Evaluate(scope) / (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            if((int)Right.Value!=0)
+            {
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) / (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+            }
             else
             throw new Exception($"Division by cero {Operator}");
             
             case TokenType.POW:
-            return Math.Pow((int)Left.Evaluate(scope), (int)Right.Evaluate(scope));
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= Math.Pow((int)Left.Evaluate(scope, Set, Before) , (int)Right.Evaluate(scope,Set,Before));
+            return this.Value;
+
             // Booleans
             case TokenType.EQUAL:
-            return SintaxFacts.EqualTerm(Left.Evaluate(scope), Right.Evaluate(scope));
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= SintaxFacts.EqualTerm(Left.Evaluate(scope, Set, Before) , Right.Evaluate(scope,Set,Before));
+            return this.Value;
+
             case TokenType.LESS_EQ:
-            return (int)Left.Evaluate(scope) <= (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) <= (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.MORE_EQ:
-            return (int)Left.Evaluate(scope) >= (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) >= (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.MORE:
-            return (int)Left.Evaluate(scope) > (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) > (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.LESS:
-            return (int)Left.Evaluate(scope) < (int)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Evaluate(scope, Set, Before) < (int)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.AND:
-            return (bool)Left.Evaluate(scope) && (bool)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (bool)Left.Evaluate(scope, Set, Before) && (bool)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.OR:
-            return (bool)Left.Evaluate(scope) || (bool)Right.Evaluate(scope);
-            // String   *+
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (bool)Left.Evaluate(scope, Set, Before) || (bool)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
+            // String   
             case TokenType.CONCATENATION:
-            return (string)Left.Evaluate(scope) + (string)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (string)Left.Evaluate(scope, Set, Before) + (string)Right.Evaluate(scope,Set,Before);
+            return this.Value;
+
             case TokenType.SPACE_CONCATENATION:
-            return (string)Left.Evaluate(scope) +" "+ (string)Right.Evaluate(scope);
+            Right.Value= (int)Right.Evaluate(scope,Set,Before);
+            Left.Value= (int)Left.Evaluate(scope,Set,Before);
+            this.Value= (string)Left.Evaluate(scope, Set, Before) + " "+ (string)Right.Evaluate(scope,Set,Before);
+            return this.Value;
             // Point            
             case TokenType.POINT:
-            //Establecer una logica mediante la cual teniendo el nombre del objeto y el nombre de su propiedad se pueda acceder a él...
-            ValueType? type = Left.Semantic(scope);
-            Left.Type= type;
-            if(type != ValueType.Null && Right is Terminal right && SintaxFacts.PointPosibbles[type].Contains(right.ValueAsToken.Type))
-            {
-                type= right.Semantic(scope);
-                Right.Type= type;
-                return SintaxFacts.TypeOf[right.ValueAsToken.Type];
-            }
-            else if(type != ValueType.Null && Right is BinaryOperator binary && binary.Operator== TokenType.INDEXER )
-            {
-                if(binary.Left is Terminal T && SintaxFacts.PointPosibbles[type].Contains(T.ValueAsToken.Type))
-                {//Chequeo que en el indexado la parte izquierda sea únicamente un terminal, de lo contrario se usaron paréntesis, lo cual no es permitido
-                    binary.Left.Type= SintaxFacts.TypeOf[T.ValueAsToken.Type];
-                    type = binary.Semantic(scope);
-                    return type; 
-                }
-                throw new Exception("Semantic, tried to associate from Point");
-            }
-            else
-                throw new Exception("Semantic from Point");
+            Left.Value= Left.Evaluate(scope, Set, Before);
+            Right.Value= Left.Evaluate(scope, Set, Left.Value);
+            
+            this.Value= Right.Value;
+            return Right.Value;
             //Indexer
             case TokenType.INDEXER:
-            if(Left.Value is List<object> list)
+            if(Left.Value is List<ICard> list)
             {
-                int index= (int)Right.Value;
-                if(index< list.Count)
-                    return list[index];
+                Right.Value= (int)Right.Evaluate(scope,Set,Before);
+                if((int)Right.Value< list.Count)
+                {
+                    Left.Value=list[(int)Right.Value];
+                    return Left.Value;
+                }
                 else 
                     throw new Exception($"Evaluate Error at Indexer, because index out of range of List");
             }
@@ -747,14 +797,16 @@ public class BinaryOperator : Expression
             //Two Points
             case TokenType.ASSIGN:
             case TokenType.TWOPOINT:
-            Left.Value= Right.Evaluate(scope);
-            return Right.Type;
             
+            Right.Value= Right.Evaluate(scope, null);
+            Left.Value= Left.Evaluate(scope, Right.Value);
+            return null;
             
             default:
             throw new Exception("Invalid Operator"+ Operator);
         }
     }
+
 }
 public class Terminal: Expression
 {
@@ -765,7 +817,7 @@ public class Terminal: Expression
         this.ValueForPrint = token.Value;
         ValueAsToken= token;
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         throw new NotImplementedException();
     }
@@ -798,7 +850,7 @@ public class UnaryOperator : Terminal
         Operator = Op.Type;
         printed= "Unary Operator---"+ Operator;
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         if(Operand!= null)
         switch(Operator)
@@ -808,7 +860,7 @@ public class UnaryOperator : Terminal
             case TokenType.Remove:
             case TokenType.Push:
             case TokenType.Add:
-            Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope));
+            Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, Set));
             return null;
             //Player Argument
             case TokenType.HandOfPlayer:
@@ -816,31 +868,31 @@ public class UnaryOperator : Terminal
             case TokenType.GraveYardOfPlayer:
             case TokenType.FieldOfPlayer:
             case TokenType.Find:
-            Value= Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope));
+            Value= Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, Set));
             return Value;
             //Numbers
             case TokenType.RDECREMENT:
-            Value= (int)Operand.Evaluate(scope)-1;
+            Value= (int)Operand.Evaluate(scope, Set)-1;
             return (int)Value+1;
             case TokenType.LDECREMENT:
-            Value= (int)Operand.Evaluate(scope)-1;
+            Value= (int)Operand.Evaluate(scope, Set)-1;
             return (int)Value+1;
             case TokenType.RINCREMENT:
-            Value= (int)Operand.Evaluate(scope)+1;
+            Value= (int)Operand.Evaluate(scope, Set)+1;
             return (int)Value-1;
             case TokenType.LINCREMENT:
-            Value= (int)Operand.Evaluate(scope)+1;
+            Value= (int)Operand.Evaluate(scope, Set)+1;
             return (int)Value;
             case TokenType.MINUS:
-            Value= (int)Operand.Evaluate(scope)*-1;
+            Value= (int)Operand.Evaluate(scope, Set)*-1;
             return (int)Value-1;
             case TokenType.PLUS:
-            Value= Operand.Evaluate(scope);
+            Value= Operand.Evaluate(scope, Set);
             return Value;
             //Boolean
             case TokenType.NOT:
             {
-                Value= Operand.Evaluate(scope);
+                Value= Operand.Evaluate(scope, Set);
                 return !(bool)Value;
             }
             
@@ -935,7 +987,7 @@ public class Number: Terminal
     {
         this.printed= "Number";
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         return Convert.ToDouble(ValueAsToken.Value);
     }
@@ -952,7 +1004,7 @@ public class BooleanLiteral : Terminal
     {
         this.printed = "Boolean";
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         return Convert.ToBoolean(ValueAsToken.Value);
     }
@@ -991,15 +1043,88 @@ public class IdentifierExpression : Terminal
             }
         }
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        object value= null;
-        if(ValueAsToken!= null)
+        if(SintaxFacts.PointPosibbles[ValueType.Context].Contains(ValueAsToken.Type))
         {
-            scope.Find(this, out value);
-            return value;
+            if(Before is IContext context)
+            {
+                return Api.GetProperty(context, ValueAsToken.Value);
+            }
+            else
+            throw new Exception("Troubles with IContext Interface");
         }
-        else return value;
+        else if(SintaxFacts.PointPosibbles[ValueType.Card].Contains(ValueAsToken.Type))
+        {
+            if(Before is ICard card)
+            {
+                if(Set!= null)//Este id se encuentra a la izquierda de una operacion de igualdad
+                switch(ValueAsToken.Type)
+                {
+                    case TokenType.Name:
+                    card.Name= (string)Set;
+                    break;
+                    case TokenType.Owner:
+                    card.Owner= (IPlayer)Set;
+                    break;
+                    case TokenType.Power:
+                    card.Power= (int)Set;
+                    break;
+                    case TokenType.Faction:
+                    card.Faction= (string)Set;
+                    break;
+                    case TokenType.Range:
+                    card.Range= (string)Set;
+                    break;
+                    case TokenType.Type:
+                    card.Type= (string)Set;
+                    break;
+                }
+                else//se encuentra a la derecha de una igualdad, solo se solicita su valor, no se pretende setear
+                switch(ValueAsToken.Type)
+                {
+                    case TokenType.Name:
+                    return card.Name;
+
+                    case TokenType.Owner:
+                    return card.Owner;
+                    
+                    case TokenType.Power:
+                    return card.Power;
+
+                    case TokenType.Faction:
+                    return card.Faction;
+                    
+                    case TokenType.Range:
+                    return card.Range;
+
+                    case TokenType.Type:
+                    return card.Type;
+                }
+
+            }
+            else
+            throw new Exception("Troubles with ICard Interface");
+        }
+        else if(ValueAsToken.Type== TokenType.ID)
+        {
+            if(Set!= null)
+            {
+                Value= Set;
+                scope.AddVar(this, Value);
+            }
+            else
+            {
+                object value= null;
+                if(ValueAsToken!= null)
+                {
+                    scope.Find(this, out value);
+                    return value;
+                }
+                else return value;
+            }
+        }
+        throw new Exception($"Unexpected problems at the identifier: {ValueAsToken}");
     }
 }
 public class StringExpression : Terminal
@@ -1008,7 +1133,7 @@ public class StringExpression : Terminal
     {
         this.printed = "STRING"; // O alguna otra forma de representar el identificador visualmente
     }
-    public override object Evaluate(EvaluateScope scope,object Before= null)
+    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         return ValueAsToken.Value.Substring(1,ValueAsToken.Value.Length-2);
     }

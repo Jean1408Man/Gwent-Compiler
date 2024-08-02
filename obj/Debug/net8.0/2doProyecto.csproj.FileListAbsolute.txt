@@ -27,3 +27,11 @@ D:\Priv\Proyecto UH\2doProyecto\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.dll
 D:\Priv\Proyecto UH\2doProyecto\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.pdb
 D:\Priv\Proyecto UH\2doProyecto\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.genruntimeconfig.cache
 D:\Priv\Proyecto UH\2doProyecto\Gwent-Compiler\obj\Debug\net8.0\ref\2doProyecto.dll
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.GeneratedMSBuildEditorConfig.editorconfig
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.AssemblyInfoInputs.cache
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.AssemblyInfo.cs
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.csproj.CoreCompileInputs.cache
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.sourcelink.json
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.dll
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\refint\2doProyecto.dll
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.pdb

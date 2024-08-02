@@ -72,7 +72,7 @@ public static class SintaxFacts
         , TokenType.Field,TokenType.FieldOfPlayer, TokenType.Hand, TokenType.HandOfPlayer,TokenType.Board, TokenType.TriggerPlayer}},
 
         
-        {ValueType.ListCard, new HashSet<TokenType>(){TokenType.Find, TokenType.Push, TokenType.SendBottom, TokenType.Pop, TokenType.Shuffle
+        {ValueType.ListCard, new HashSet<TokenType>(){ TokenType.Push, TokenType.SendBottom, TokenType.Pop, TokenType.Shuffle
         }},
 
     };
