@@ -35,3 +35,10 @@ D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compile
 D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.dll
 D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\refint\2doProyecto.dll
 D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.pdb
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.exe
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.deps.json
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.runtimeconfig.json
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.dll
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\bin\Debug\net8.0\2doProyecto.pdb
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\2doProyecto.genruntimeconfig.cache
+D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\obj\Debug\net8.0\ref\2doProyecto.dll

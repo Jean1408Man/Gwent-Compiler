@@ -1,15 +1,15 @@
 effect {
-    Name: "Damage",
+    Name: "Juan",
     Params: {
         Amount: Number,
     },
-    Action: (targets, context) => {
+    Action: (Juanito, context) => 
+    {
         i=9;
-        for target in context.Find((rachel)=> rachel.Faction == "Hola") {
-            i = 0;
-            while (i++ < Amount)
-                target.Faction = targets[1].Faction;
-        i= 6;
+        for tarjeta in Juanito
+        for target in context.Find((rachel)=> rachel.Faction == "Hola") 
+        {
+            
         };
         context.Hand[6+7+i].Power= 5;
     }

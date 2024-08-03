@@ -31,9 +31,39 @@ namespace LogicalSide
         string Range{get; set;}
         IPlayer Owner{get; set;}
         string Faction{get; set;}
+        List<IEffect> Effects{get; set;}
+    }
+    public class MyCard: ICard
+    {
+        public string Name{get; set;}
+        public string Type{get; set;}
+        public int Power{get; set;}
+        public string Range{get; set;}
+        public IPlayer Owner{get; set;}
+        public string Faction{get; set;}
+        public List<IEffect> Effects{get; set;}
     }
     public interface IPlayer
     {
 
     }
+    public interface IEffect
+    {
+        EffectDeclarationExpr effect{get; set;}
+
+        SelectorExpression Selector{get; set;}
+    }
+    public class MyEffect: IEffect
+    {
+        public MyEffect(EffectDeclarationExpr eff, SelectorExpression Sel)
+        {
+            effect = eff;
+            Selector = Sel;
+        }
+        public EffectDeclarationExpr effect{get; set;}
+
+        public SelectorExpression Selector{get; set;}
+    }
+    
+
 }

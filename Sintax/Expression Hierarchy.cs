@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Reflection.Metadata;
 using System.Reflection;
+using System.Linq.Expressions;
 
 namespace LogicalSide;
 
@@ -14,7 +15,7 @@ namespace LogicalSide;
         {
             if(_value==null)
             {
-                _value = Evaluate(Evaluator);
+                _value = Evaluate(Evaluator, null);
                 return _value;
             }
             else
@@ -31,7 +32,6 @@ namespace LogicalSide;
         return Value;
     }
     #endregion
-    
     public SemanticalScope? SemanticScope;
     public EvaluateScope? Evaluator;
     public ValueType? Type; 
@@ -44,7 +44,10 @@ namespace LogicalSide;
         Console.WriteLine(new string(' ', indentLevel * 4) +"Token: "+ printed);
     }
     public abstract ValueType? Semantic(SemanticalScope scope);
+    //This is the method who will build the structure of the card
     public abstract object Evaluate(EvaluateScope scope,object Set, object Before= null);
+    //This is the method, that uses the structure given by the Evaluate Method, and will execute the functionality of the card in the game
+    //public abstract void Execute();
  }
 public class ProgramExpression: Expression
 {
@@ -56,7 +59,17 @@ public class ProgramExpression: Expression
     }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        List<ICard> cards= new();
+        object values=null;
+        foreach(Expression exp in EffectsAndCards)
+        {
+            values= exp.Evaluate(scope, null, Before);
+            if(exp is CardExpression card)
+            {
+                cards.Add((ICard)values);
+            }
+        }
+        return cards;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -93,10 +106,31 @@ public class EffectDeclarationExpr: Expression
 {
     public Expression? Name;
     public List<Expression>? Params;
-    public Expression? Action;
+    public ActionExpression? Action;
+
+    //TODO: Effect Declarations need a method named Execute, wich will take the variables initialized correctly and act
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        string name= (string)Name.Evaluate(scope, Set);
+        if(EvaluateUtils.ParamsRequiered.ContainsKey(name))
+            throw new Exception("Evaluate Error, you declared at least two effects with the same name");
+        EvaluateUtils.ParamsRequiered.Add(name, new List<IdentifierExpression>());
+        EvaluateUtils.Effects.Add(name, this);
+        foreach(Expression exp in Params)
+        {
+            if(exp is BinaryOperator bin)
+            {
+                if(bin.Left is IdentifierExpression id)
+                {
+                    EvaluateUtils.ParamsRequiered[name].Add(id);
+                }
+                else
+                    throw new Exception("Unexpected code entrance");
+            }
+            else
+            throw new Exception("Unexpected code entrance");
+        }
+        return true;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -110,7 +144,7 @@ public class EffectDeclarationExpr: Expression
         #region Name
         if(Name== null || Name.Semantic(scope)!= ValueType.String)
         {
-            throw new Exception("Semantic Error, Expected String Type");
+            throw new Exception("Semantic Error, Name is null or not String Type");
         }
         #endregion
         
@@ -132,6 +166,7 @@ public class EffectDeclarationExpr: Expression
             throw new Exception("Semantic Error, Expected Action Type");
         }
         #endregion
+        
         return ValueType.EffectDeclaration;
     }
 }
@@ -140,12 +175,17 @@ public class InstructionBlock: Expression
     public List<Expression>? Instructions= new();
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        Evaluator = new EvaluateScope(scope);
+        foreach(Expression exp in Instructions)
+        {
+            exp.Evaluate(Evaluator,null);
+        }
+        return true;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
         if(Instructions == null)
-        throw new Exception("Semantic Error, Empty Instruction Block");
+            throw new Exception("Semantic Error, Empty Instruction Block");
         foreach(Expression exp in Instructions)
         {
             exp.Semantic(scope);
@@ -165,7 +205,19 @@ public class ActionExpression: Expression
     public InstructionBlock? Instructions;
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        Evaluator = new EvaluateScope(scope);
+        if(Targets.Value != null)
+        {
+            Evaluator.AddVar(Targets,Targets.Value);
+        }
+        else throw new Exception("Evaluate Error, Targets is not set correctly");
+        if(Context.Value != null)
+        {
+            Evaluator.AddVar(Context,Context);
+        }
+        else throw new Exception("Evaluate Error, Targets is not set correctly");
+        Instructions.Evaluate(Evaluator,null);
+        return true;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -200,7 +252,23 @@ public class ForExpression: Expression
 
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        Evaluator= new EvaluateScope(scope);
+
+        Collection.Value = Collection.Evaluate(scope, null);
+        Evaluator.AddVar(Collection, Collection.Value);
+        Evaluator.AddVar(Variable, null);
+
+        if(Collection.Value is List<ICard> list)
+        {
+            foreach (ICard item in list)
+            {
+                Variable.Value= item;
+                Evaluator.AddVar(Variable, Variable.Value);
+
+                Instructions.Evaluate(Evaluator, null);
+            }
+        }
+        return null;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -214,7 +282,6 @@ public class ForExpression: Expression
         if(Collection != null)
         {
             Collection.Type= ValueType.ListCard;
-            SemanticScope.AddVar(Collection,Collection);
         }
         else throw new Exception("Semantic Error, For Collection is Empty");
         if(Instructions != null)
@@ -224,6 +291,7 @@ public class ForExpression: Expression
         }
         return ValueType.For;
     }
+    
     public override void Print(int indentLevel = 0)
     {
         printed = "For";
@@ -237,7 +305,11 @@ public class WhileExpression: Expression
 
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        while((bool)Condition.Evaluate(scope, null))
+        {
+            Instructions.Evaluate(scope, null);
+        }
+        return null;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -259,7 +331,6 @@ public class WhileExpression: Expression
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
 }
-
 #endregion
 
 
@@ -277,15 +348,38 @@ public class CardExpression: Expression
 {
     public Expression? Name;
     public Expression? Type;
-    public Expression? Effect;
     public Expression? Faction;
     public Expression? Power;
     public List<Expression>? Range;
     public OnActivationExpression? OnActivation;
+    private string RangeFormat(List<Expression> ranges)
+    {
 
+        List<string> strings= new List<string>{"Range", "Melee", "Siege"};
+        string s= "";
+        string ev;
+        foreach(Expression range in ranges)
+        {
+            ev= (string)range.Evaluate(null, null);
+            if(strings.Contains(ev))
+            {
+                s+= ev.Substring(0,1);
+            }
+        }
+        return s;
+    }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        MyCard card= new();
+        card.Name= (string)Name!.Evaluate(scope, Set);
+        card.Type= (string)Type!.Evaluate(scope, Set);
+        card.Faction= (string)Faction!.Evaluate(scope, Set);
+        card.Power= (int)Power!.Evaluate(scope, Set);
+        card.Effects= (List<IEffect>)OnActivation.Evaluate(scope,null);
+        
+        card.Range= RangeFormat(Range);
+        Value = card;
+        return card;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -351,8 +445,11 @@ public class PredicateExp: Expression
         printed = "Predicate";
     }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
-    {
-        throw new NotImplementedException();
+    {//At this method Set will be the Card is being analized for this predicate
+        Evaluator = new EvaluateScope(scope);
+        Evaluator.AddVar(Unit, Unit.Value);
+        Unit.Value= Set;
+        return Condition.Evaluate(Evaluator, null);//this is supossed to be a boolean that verifies the predicate
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -369,7 +466,13 @@ public class OnActivationExpression: Expression
     public List<EffectAssignment>? Effects= new();
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        List<IEffect> effects= new();
+        foreach(EffectAssignment assignment in Effects)
+        {
+            assignment.Evaluate(scope, Set, effects);
+        }
+        Value=effects;
+        return Value;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -395,7 +498,18 @@ public class EffectAssignment: Expression
     public EffectAssignment? PostAction;
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        Value= EvaluateUtils.Finder(Effect);
+        Value= new MyEffect((EffectDeclarationExpr)Value, Selector);
+        if(Before is List<IEffect> list)
+        {
+            list.Add((IEffect)Value);
+        }
+        Selector.Evaluate(scope, Set, Before);
+        if(PostAction!= null)
+        {
+            PostAction.Evaluate(scope, Selector.Source.Value, Before);
+        }
+        return null;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -440,7 +554,14 @@ public class SelectorExpression: Expression
     public Expression? Predicate;
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        throw new NotImplementedException();
+        string s= (string)Source.Evaluate(scope, Set,Before);
+        if(s== "parent")
+        {//Is trying to use the source of its parent
+            Source.Value= Set;
+        }
+        Single.Evaluate(scope, Set, Before);
+        Predicate.Evaluate(scope, Set,Before);
+        return null;
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -470,8 +591,6 @@ public class SelectorExpression: Expression
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
 }
-
-
 #endregion
 
 
@@ -722,7 +841,7 @@ public class BinaryOperator : Expression
             case TokenType.EQUAL:
             Right.Value= (int)Right.Evaluate(scope,Set,Before);
             Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= SintaxFacts.EqualTerm(Left.Evaluate(scope, Set, Before) , Right.Evaluate(scope,Set,Before));
+            this.Value= Left.Evaluate(scope, Set, Before).Equals(Right.Evaluate(scope,Set,Before));
             return this.Value;
 
             case TokenType.LESS_EQ:

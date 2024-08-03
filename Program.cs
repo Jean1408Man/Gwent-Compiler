@@ -10,7 +10,7 @@ namespace LogicalSide
         {
             try
             {
-                string filePath = @"D:\Priv\Proyecto UH\2doProyecto\Gwent-Compiler\Input.txt";
+                string filePath = @"D:\Priv\Proyecto UH\Gwent.Pro\Gwent-Pro\Assets\Scripts\Compilation\Gwent-Compiler\Input.txt";
                 string text = File.ReadAllText(filePath);
                 Lexer l = new Lexer(text);
                 List<Token> tokens = l.Tokenize();
@@ -25,6 +25,7 @@ namespace LogicalSide
                 PrintExpressionTree(root);
                 Semantic semantic= new Semantic(root);
                 PrintExpressionTree(root);
+                List<ICard> cards= 
             }
             catch (Exception e)
             {

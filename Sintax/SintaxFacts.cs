@@ -248,7 +248,6 @@ public class SemanticalScope: Scope
             Variables.Add(exp,Value);
         }
     }
-    
 }
 
 public class EvaluateScope: Scope
