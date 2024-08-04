@@ -108,6 +108,24 @@ public class EffectDeclarationExpr: Expression
     public List<Expression>? Params;
     public ActionExpression? Action;
 
+    public void Execute(IContext context, List<ICard> targets, List<IdentifierExpression> Param)
+    {
+        Evaluator = new EvaluateScope();
+        Action.Context.Value= context;
+        Action.Targets.Value= targets;
+        EvaluateUtils.SetUpParams(Param, Params);
+        IdentifierExpression id;
+        foreach(Expression exp in Params)
+        {
+            if(exp is BinaryOperator bin)
+            {
+                id= (IdentifierExpression)bin.Left;
+                Evaluator.AddVar(id, id.Value);
+            }
+        }
+        Action.Evaluate(Evaluator,null); 
+    }
+
     //TODO: Effect Declarations need a method named Execute, wich will take the variables initialized correctly and act
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
@@ -116,6 +134,7 @@ public class EffectDeclarationExpr: Expression
             throw new Exception("Evaluate Error, you declared at least two effects with the same name");
         EvaluateUtils.ParamsRequiered.Add(name, new List<IdentifierExpression>());
         EvaluateUtils.Effects.Add(name, this);
+        if(Params!= null && Params.Count>0)
         foreach(Expression exp in Params)
         {
             if(exp is BinaryOperator bin)
@@ -428,7 +447,7 @@ public class CardExpression: Expression
             throw new Exception("Semantic Error, Expected OnActivation Type");
         }
         #endregion
-        return ValueType.Card;
+        return ValueType.CardDeclaration;
     }
     public override void Print(int indentLevel = 0)
     {
@@ -504,10 +523,14 @@ public class EffectAssignment: Expression
         {
             list.Add((IEffect)Value);
         }
+        if(Selector!= null)
         Selector.Evaluate(scope, Set, Before);
         if(PostAction!= null)
         {
-            PostAction.Evaluate(scope, Selector.Source.Value, Before);
+            if(Selector!= null)
+                PostAction.Evaluate(scope, Selector.Source.Value, Before);
+            else
+                PostAction.Evaluate(scope, null, Before);
         }
         return null;
     }
@@ -528,13 +551,13 @@ public class EffectAssignment: Expression
         #endregion
         
         #region Selector
-        if(Selector== null || Selector.Semantic(scope)!= ValueType.Selector)
+        if(Selector!= null && Selector.Semantic(scope)!= ValueType.Selector)
         {
             throw new Exception("Semantic Error, Expected Seletor Type");
         }
         #endregion
         #region Post Action
-        if(PostAction== null || PostAction.Semantic(scope)!= ValueType.OnActivacion)
+        if(PostAction!= null && PostAction.Semantic(scope)!= ValueType.EffectAssignment)
         {
             throw new Exception("Semantic Error, Expected OnActivation Type");
         }
@@ -552,15 +575,68 @@ public class SelectorExpression: Expression
     public Expression? Source;
     public Expression? Single;
     public Expression? Predicate;
+
+    readonly List<string> SourcesAvailable= new List<string>{"hand", "otherhand", "deck", "otherdeck", "field", "otherfield", "parent"};
+    private string FormatSources(string source)
+    {
+        string format= "";
+        switch(source)
+        {
+            case "hand":
+            format= "Hand";
+            break;
+
+            case "otherhand":
+            format= "OtherHand";
+            break;
+
+            case "deck":
+            format= "Deck";
+            break;
+
+            case "otherdeck":
+            format= "OtherDeck";
+            break;
+
+            case "field":
+            format= "Field";
+            break;
+
+            case "otherfield":
+            format= "OtherField";
+            break;
+
+            case "board":
+            format= "Board";
+            break;
+
+            case "parent":
+            format= "parent";
+            break;
+            default:
+            throw new Exception("Problems formatting the source");
+        }
+        return format;
+    }
+    public List<ICard> Execute(IContext context)
+    {
+        #region Finding Out the Source
+        Source.Value= FormatSources((string)Source.Value);
+        List<ICard> SourceCards= (List<ICard>)Api.InvokeMethodWithParameters(context, (string)Source.Value, null);
+        
+    }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
         string s= (string)Source.Evaluate(scope, Set,Before);
+        if(!SourcesAvailable.Contains(s))
+        {
+            throw new Exception($"You are giving an invalid source: {s}, check the available sources and try again");
+        }
         if(s== "parent")
         {//Is trying to use the source of its parent
             Source.Value= Set;
         }
         Single.Evaluate(scope, Set, Before);
-        Predicate.Evaluate(scope, Set,Before);
         return null;
     }
     public override ValueType? Semantic(SemanticalScope scope)
@@ -653,7 +729,7 @@ public class BinaryOperator : Expression
                         return ValueType.Number;
                     }
                 else
-                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+                    throw new Exception($"You are trying to operate with a {Operator} but the operands must be number espressions");
             }
             //Math that return boolean
             case TokenType.LESS_EQ:
@@ -669,7 +745,7 @@ public class BinaryOperator : Expression
                         return ValueType.Boolean;
                     }
                 else
-                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+                    throw new Exception($"You are trying to operate with a {Operator} but the operands must be number espressions");
             }
             // Booleans
             case TokenType.EQUAL:
@@ -678,7 +754,7 @@ public class BinaryOperator : Expression
             if(Left.Type== Right.Type)
                     return ValueType.Boolean;
                 else
-                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be from the same type");
+                    throw new Exception($"You are trying to operate with a {Operator} but the operands must be from the same type");
             case TokenType.AND:
             case TokenType.OR:
             {
@@ -690,7 +766,7 @@ public class BinaryOperator : Expression
                         return ValueType.Boolean;
                     }
                 else
-                    throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+                    throw new Exception($"You are trying to operate with a {Operator} but the operands must be number espressions");
             }
             
             // String
@@ -704,7 +780,7 @@ public class BinaryOperator : Expression
                 return ValueType.String;
             }
             else
-                throw new Exception($"You are trying to operate with a {Operator.GetType} but the operands must be number espressions");
+                throw new Exception($"You are trying to operate with a {Operator} but the operands must be number espressions");
             
             // Point            
             case TokenType.POINT:
@@ -919,7 +995,8 @@ public class BinaryOperator : Expression
             
             Right.Value= Right.Evaluate(scope, null);
             Left.Value= Left.Evaluate(scope, Right.Value);
-            return null;
+            Value= Left.Value;
+            return Left.Value;
             
             default:
             throw new Exception("Invalid Operator"+ Operator);
@@ -1108,7 +1185,7 @@ public class Number: Terminal
     }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        return Convert.ToDouble(ValueAsToken.Value);
+        return Convert.ToInt32(ValueAsToken.Value);
     }
     public override ValueType? Semantic(SemanticalScope scope)
     {
@@ -1173,10 +1250,8 @@ public class IdentifierExpression : Terminal
             else
             throw new Exception("Troubles with IContext Interface");
         }
-        else if(SintaxFacts.PointPosibbles[ValueType.Card].Contains(ValueAsToken.Type))
+        else if(SintaxFacts.PointPosibbles[ValueType.Card].Contains(ValueAsToken.Type)&& Before is ICard card)
         {
-            if(Before is ICard card)
-            {
                 if(Set!= null)//Este id se encuentra a la izquierda de una operacion de igualdad
                 switch(ValueAsToken.Type)
                 {
@@ -1221,16 +1296,13 @@ public class IdentifierExpression : Terminal
                     return card.Type;
                 }
 
-            }
-            else
-            throw new Exception("Troubles with ICard Interface");
         }
-        else if(ValueAsToken.Type== TokenType.ID)
-        {
             if(Set!= null)
             {
                 Value= Set;
+                if(scope!=null)
                 scope.AddVar(this, Value);
+                return Value;
             }
             else
             {
@@ -1242,8 +1314,7 @@ public class IdentifierExpression : Terminal
                 }
                 else return value;
             }
-        }
-        throw new Exception($"Unexpected problems at the identifier: {ValueAsToken}");
+            throw new Exception($"Unexpected problems at the identifier: {ValueAsToken}");
     }
 }
 public class StringExpression : Terminal

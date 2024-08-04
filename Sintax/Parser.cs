@@ -124,6 +124,7 @@ public class Parser
                 position++;
                 returned= new UnaryOperator(null, token);
             }
+            else
             throw new Exception($"Invalid Token: {tokens[position]}. Expected a none parameters method sintax");
         }
         else if (tokens[position].Type == TokenType.Push ||

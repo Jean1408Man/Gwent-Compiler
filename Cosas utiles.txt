@@ -1,11 +1,5 @@
 Cosas pendientes:
-- Parseo de incrementos
-- Indexado en listas
-- Boolean type assignment
-- Preguntar si pasan dos Name da error
-- Agregar cosas en Lexer
-- Add Find() with and without params
-- Modificar metodos ToString de los enum
+-
 
 Operaciones Unarias:
 - Not
@@ -23,3 +17,12 @@ Errores para Evaluate:
 - Division por cero
 - Remover en lista sin el elemento
 - Indexar en lista fuera de rango
+
+
+Cosas por Checkear al debugear Evaluate:
+-Crear un efecto con un nombre existente Error
+
+
+
+
+

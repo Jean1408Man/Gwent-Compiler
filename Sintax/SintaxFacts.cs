@@ -72,7 +72,7 @@ public static class SintaxFacts
         , TokenType.Field,TokenType.FieldOfPlayer, TokenType.Hand, TokenType.HandOfPlayer,TokenType.Board, TokenType.TriggerPlayer}},
 
         
-        {ValueType.ListCard, new HashSet<TokenType>(){ TokenType.Push, TokenType.SendBottom, TokenType.Pop, TokenType.Shuffle
+        {ValueType.ListCard, new HashSet<TokenType>(){ TokenType.Add,TokenType.Remove, TokenType.Push, TokenType.SendBottom, TokenType.Pop, TokenType.Shuffle
         }},
 
     };
@@ -124,7 +124,7 @@ public static class SintaxFacts
         {TokenType.Push, ValueType.Void},
         {TokenType.Shuffle, ValueType.Void},
         {TokenType.Add, ValueType.Void},
-
+        {TokenType.Remove, ValueType.Void},
     };
 
     public static readonly List<ValueType?> AssignableTypes= new List<ValueType?>

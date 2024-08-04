@@ -25,7 +25,7 @@ namespace LogicalSide
                 PrintExpressionTree(root);
                 Semantic semantic= new Semantic(root);
                 PrintExpressionTree(root);
-                List<ICard> cards= 
+                List<ICard> cards= (List<ICard>)root.Evaluate(null,null);
             }
             catch (Exception e)
             {

@@ -39,10 +39,25 @@ public static class EvaluateUtils
         {
             throw new Exception("Unexpected code Entrance");
         }
-
-        
-        
     }
+    public static void SetUpParams(List<IdentifierExpression> Values, List<Expression> Params)
+    {
+        foreach(Expression ex in Params)
+        {
+            if(ex is BinaryOperator bin)
+            {
+                if(bin.Left is IdentifierExpression ide)
+                foreach(IdentifierExpression id in Params)
+                {
+                    if(ide.ValueAsToken.Value== id.ValueAsToken.Value)
+                    {
+                        ide.Value= id.Value;
+                        bin.Value= id.Value;
+                    }
+                }
+            }
+        }
+    } 
     private static bool InternalFinder(List<IdentifierExpression> Declared, List<Expression> Asked)
     {
         if(Declared.Count!= Asked.Count)
@@ -76,7 +91,6 @@ public static class EvaluateUtils
         {
             throw new Exception("The params you declared doesnt coincide with the effect");
         }
-        return false;
     } 
 
 }
