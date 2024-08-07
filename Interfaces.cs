@@ -8,25 +8,30 @@ namespace LogicalSide
     public interface IContext
     {
         bool Turn{get; set;}
-        List<ICard> Find(Expression exp);
-        List<ICard> Deck{get; set;}
-        List<ICard> OtherDeck{get; set;}
-        List<ICard> DeckOfPlayer(IPlayer player);
-        List<ICard> GraveYard{get; set;}
+        CustomList<ICard> Find(Expression exp);
         
-        List<ICard> GraveYardOfPlayer(IPlayer player);
+        CustomList<ICard> Deck{get; set;}
+        CustomList<ICard> OtherDeck{get; set;}
+        CustomList<ICard> DeckOfPlayer(IPlayer player);
         
-        List<ICard> Field{get; set;}
-        List<ICard> OtherField{get; set;}
+        
+        CustomList<ICard> GraveYard{get; set;}
 
-        List<ICard> FieldOfPlayer(IPlayer player);
-        List<ICard> Hand{get; set;}
-        List<ICard> OtherHand{get; set;}
+        
+        CustomList<ICard> GraveYardOfPlayer(IPlayer player);
+        
+        CustomList<ICard> Field{get; set;}
+        CustomList<ICard> OtherField{get; set;}
+        CustomList<ICard> FieldOfPlayer(IPlayer player);
+        
+        
+        CustomList<ICard> Hand{get; set;}
+        CustomList<ICard> OtherHand{get; set;}
 
 
-        List<ICard> HandOfPlayer(IPlayer player);
-        List<ICard> Board{get; set;}
-        List<ICard> TriggerPlayer{get; set;}
+        CustomList<ICard> HandOfPlayer(IPlayer player);
+        CustomList<ICard> Board{get; set;}
+        CustomList<ICard> TriggerPlayer{get; set;}
     }
 
 
@@ -39,6 +44,9 @@ namespace LogicalSide
         IPlayer Owner{get; set;}
         string Faction{get; set;}
         List<IEffect> Effects{get; set;}
+        
+
+          
 
         void Execute(IContext context)
         {
@@ -57,11 +65,33 @@ namespace LogicalSide
         public IPlayer Owner{get; set;}
         public string Faction{get; set;}
         public List<IEffect> Effects{get; set;}
+        public override string ToString()
+        {
+            string result= "";
+            result += "Name: " + Name + "\n";
+            result += "Type: " + Type + "\n";
+            result += "Power: " + Power + "\n";
+            result += "Range: " + Range + "\n";
+            result += "Owner: " + Owner + "\n";
+            result += "Faction: " + Faction + "\n";
+            result += "Efectos: \n";
+            int conta = 1;
+            foreach(IEffect effect in Effects)
+            {
+                Console.WriteLine($"{conta++}- "+ effect);
+            }
+            return result;
+        }
     }
     public interface IPlayer
     {
-
+        bool Turn{get; set;}
     }
+    public class Player: IPlayer
+    {
+        public bool Turn{get; set;}
+    }
+    
     public interface IEffect
     {
         EffectDeclarationExpr effect{get; set;}
@@ -70,7 +100,7 @@ namespace LogicalSide
 
         void Execute(IContext context)
         {
-            List<ICard> targets= Selector.Execute(context);
+            CustomList<ICard> targets= Selector.Execute(context);
             effect.Execute(context, targets, Params);
         }
     }
@@ -87,7 +117,17 @@ namespace LogicalSide
         public EffectDeclarationExpr effect{get; set;}
 
         public SelectorExpression Selector{get; set;}
+        public override string ToString()
+        {
+            string s= "Efecto: " + (string)effect.Name.Value+ "\n";
+            foreach(IdentifierExpression identifier in Params)
+            {
+                s+= identifier.ValueAsToken.Value+ "\n";
+            }
+            return s;
+        }
     }
     
+
 
 }

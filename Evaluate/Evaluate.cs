@@ -10,6 +10,6 @@ public class Evaluator
     public object Evaluate()
     {
         SintaxFacts.CompilerPhase= "Evaluate";
-        return root.Evaluate(null,null);
+        return root.Evaluate(null!,null!);
     }
 }

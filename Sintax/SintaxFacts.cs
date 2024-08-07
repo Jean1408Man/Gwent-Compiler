@@ -307,6 +307,7 @@ public class EvaluateScope: Scope
         InternalFind(exp,out Finded, out Where);
         if(Where!= null)
         {
+            Finded.Value= Value;
             Where.Variables[Finded]= Value;
         }
         else

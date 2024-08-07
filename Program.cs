@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using LogicalSide;
 
 namespace LogicalSide
 {
@@ -25,7 +26,15 @@ namespace LogicalSide
                 PrintExpressionTree(root);
                 Semantic semantic= new Semantic(root);
                 PrintExpressionTree(root);
-                List<ICard> cards= (List<ICard>)root.Evaluate(null,null);
+                CustomList<ICard> cards= (CustomList<ICard>)root.Evaluate(null!,null!);
+                CheckingContext context = new();
+                context.Deck= cards;
+                foreach(ICard card in cards.list)
+                {
+                    card.Owner= new Player();
+                    Console.WriteLine(card.ToString());
+                    card.Execute(context);
+                }
             }
             catch (Exception e)
             {
@@ -189,4 +198,112 @@ namespace LogicalSide
 
         }
     }
+}
+public class CheckingContext: IContext
+{
+    public bool Turn{get; set;}
+    public CustomList<ICard> Find(Expression exp)
+    {
+        CustomList<ICard> result= new(null,null);
+        if(exp is PredicateExp predicate)
+        {
+            foreach(ICard card in Board.list)
+            {
+                predicate.Unit.Value= card;
+                if((bool)predicate.Condition.Evaluate(exp.Evaluator, null))
+                {
+                    result.Add(card);
+                }
+            }
+        }
+        return result;
+    }
+    
+    public CustomList<ICard> Deck{get; set;}= new CustomList<ICard>(true,true)
+    {
+    };
+    public CustomList<ICard> OtherDeck{get; set;}= new CustomList<ICard>(true,true)
+    {
+    };
+
+    public CustomList<ICard> DeckOfPlayer(IPlayer player)
+    {
+        if(player.Turn)
+        {
+            return Deck;
+        }
+        else
+        {
+            return OtherDeck;
+        }
+    }
+    
+    
+    public CustomList<ICard> GraveYard{get; set;}= new CustomList<ICard>(true,true)
+    {
+    };
+
+    public CustomList<ICard> OtherGraveYard{get; set;}= new CustomList<ICard>(true,true)
+    {
+    };
+
+    public CustomList<ICard> GraveYardOfPlayer(IPlayer player)
+    {
+        if(player.Turn)
+        {
+            return GraveYard;
+        }
+        else
+        {
+            return OtherGraveYard;
+        }
+    }
+    
+    public CustomList<ICard> Field{get; set;}= new CustomList<ICard>(true,false)
+    {
+    };
+
+    public CustomList<ICard> OtherField{get; set;}= new CustomList<ICard>(true,false)
+    {
+    };
+
+    public CustomList<ICard> FieldOfPlayer(IPlayer player)
+    {
+        if(player.Turn)
+        {
+            return Field;
+        }
+        else
+        {
+            return OtherField;
+        }
+    }
+    
+    
+    public CustomList<ICard> Hand{get; set;}= new CustomList<ICard>(true,true)
+    {
+    };
+
+    public CustomList<ICard> OtherHand{get; set;}= new CustomList<ICard>(true,true)
+    {
+    };
+
+
+
+    public CustomList<ICard> HandOfPlayer(IPlayer player)
+    {
+        if(player.Turn)
+        {
+            return Hand;
+        }
+        else
+        {
+            return OtherHand;
+        }
+    }
+    public CustomList<ICard> Board{get; set;}= new CustomList<ICard>(true,false)
+    {
+    };
+
+    public CustomList<ICard> TriggerPlayer{get; set;}
 }

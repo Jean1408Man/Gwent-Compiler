@@ -9,23 +9,7 @@ namespace LogicalSide;
  {
     #region EvaluateSection
     public object _value;
-    public object? Value
-    {
-        get
-        {
-            if(_value==null)
-            {
-                _value = Evaluate(Evaluator, null);
-                return _value;
-            }
-            else
-            return _value;
-        } 
-        set
-        {
-            _value= value;
-        }
-    }
+    public object? Value{get;set;}
     public object? GetValue(EvaluateScope ev)
     {
         Evaluator= ev;
@@ -43,9 +27,9 @@ namespace LogicalSide;
         else
         Console.WriteLine(new string(' ', indentLevel * 4) +"Token: "+ printed);
     }
-    public abstract ValueType? Semantic(SemanticalScope scope);
+    public abstract ValueType? Semantic(SemanticalScope? scope);
     //This is the method who will build the structure of the card
-    public abstract object Evaluate(EvaluateScope scope,object Set, object Before= null);
+    public abstract object Evaluate(EvaluateScope? scope,object Set, object Before= null);
     //This is the method, that uses the structure given by the Evaluate Method, and will execute the functionality of the card in the game
     //public abstract void Execute();
  }
@@ -59,7 +43,7 @@ public class ProgramExpression: Expression
     }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        List<ICard> cards= new();
+        CustomList<ICard> cards= new(false,false);
         object values=null;
         foreach(Expression exp in EffectsAndCards)
         {
@@ -108,11 +92,12 @@ public class EffectDeclarationExpr: Expression
     public List<Expression>? Params;
     public ActionExpression? Action;
 
-    public void Execute(IContext context, List<ICard> targets, List<IdentifierExpression> Param)
+    public void Execute(IContext context, CustomList<ICard> targets, List<IdentifierExpression> Param)
     {
         Evaluator = new EvaluateScope();
         Action.Context.Value= context;
         Action.Targets.Value= targets;
+        if(Params!= null && Params.Count>0){
         EvaluateUtils.SetUpParams(Param, Params);
         IdentifierExpression id;
         foreach(Expression exp in Params)
@@ -123,13 +108,14 @@ public class EffectDeclarationExpr: Expression
                 Evaluator.AddVar(id, id.Value);
             }
         }
+        }
         Action.Evaluate(Evaluator,null); 
     }
 
     //TODO: Effect Declarations need a method named Execute, wich will take the variables initialized correctly and act
-    public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
+    public override object Evaluate(EvaluateScope? scope,object Set, object Before= null)
     {
-        string name= (string)Name.Evaluate(scope, Set);
+        string name= (string)Name!.Evaluate(scope, Set);
         if(EvaluateUtils.ParamsRequiered.ContainsKey(name))
             throw new Exception("Evaluate Error, you declared at least two effects with the same name");
         EvaluateUtils.ParamsRequiered.Add(name, new List<IdentifierExpression>());
@@ -156,7 +142,7 @@ public class EffectDeclarationExpr: Expression
         printed = "Effect";
         Console.WriteLine(new string(' ', indentLevel * 4) + printed);
     }
-    public override ValueType? Semantic(SemanticalScope scope)
+    public override ValueType? Semantic(SemanticalScope? scope)
     {//Dependiendo de si queremos que Name sea accesible dentro del Action se pasarará Scope o scope, asumo por ahora que no
         SemanticScope = new SemanticalScope(scope);
         
@@ -232,7 +218,7 @@ public class ActionExpression: Expression
         else throw new Exception("Evaluate Error, Targets is not set correctly");
         if(Context.Value != null)
         {
-            Evaluator.AddVar(Context,Context);
+            Evaluator.AddVar(Context,Context.Value);
         }
         else throw new Exception("Evaluate Error, Targets is not set correctly");
         Instructions.Evaluate(Evaluator,null);
@@ -274,12 +260,10 @@ public class ForExpression: Expression
         Evaluator= new EvaluateScope(scope);
 
         Collection.Value = Collection.Evaluate(scope, null);
-        Evaluator.AddVar(Collection, Collection.Value);
-        Evaluator.AddVar(Variable, null);
 
-        if(Collection.Value is List<ICard> list)
+        if(Collection.Value is CustomList<ICard> list)
         {
-            foreach (ICard item in list)
+            foreach (ICard item in list.list)
             {
                 Variable.Value= item;
                 Evaluator.AddVar(Variable, Variable.Value);
@@ -324,9 +308,11 @@ public class WhileExpression: Expression
 
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
+        
+        Evaluator = new EvaluateScope(scope);
         while((bool)Condition.Evaluate(scope, null))
         {
-            Instructions.Evaluate(scope, null);
+            Instructions.Evaluate(Evaluator, null);
         }
         return null;
     }
@@ -466,8 +452,8 @@ public class PredicateExp: Expression
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {//At this method Set will be the Card is being analized for this predicate
         Evaluator = new EvaluateScope(scope);
-        Evaluator.AddVar(Unit, Unit.Value);
         Unit.Value= Set;
+        Evaluator.AddVar(Unit, Unit.Value);
         return Condition.Evaluate(Evaluator, null);//this is supossed to be a boolean that verifies the predicate
     }
     public override ValueType? Semantic(SemanticalScope scope)
@@ -512,13 +498,26 @@ public class OnActivationExpression: Expression
 }
 public class EffectAssignment: Expression
 {
-    public List<Expression>? Effect = new();
+    public List<Expression> Effect = new();
     public SelectorExpression? Selector;
     public EffectAssignment? PostAction;
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
-        Value= EvaluateUtils.Finder(Effect);
-        Value= new MyEffect((EffectDeclarationExpr)Value, Selector);
+        List<IdentifierExpression> CorrectParams= new();
+        for(int i = 0; i< Effect.Count; i++)
+        {
+            Expression exp = Effect[i];
+            object value =exp.Evaluate(scope,null);
+            if(exp is BinaryOperator bin)
+            {
+                bin.Left.Value = value;
+                exp= bin.Left;
+                CorrectParams.Add((IdentifierExpression)exp);
+            }
+        }
+        Value= EvaluateUtils.Finder(CorrectParams);
+        
+        Value= new MyEffect((EffectDeclarationExpr)Value, Selector, CorrectParams);
         if(Before is List<IEffect> list)
         {
             list.Add((IEffect)Value);
@@ -618,12 +617,37 @@ public class SelectorExpression: Expression
         }
         return format;
     }
-    public List<ICard> Execute(IContext context)
+    public CustomList<ICard> Execute(IContext context)
     {
-        #region Finding Out the Source
-        Source.Value= FormatSources((string)Source.Value);
-        List<ICard> SourceCards= (List<ICard>)Api.InvokeMethodWithParameters(context, (string)Source.Value, null);
+        PredicateExp predicate= (Predicate as PredicateExp)!;
         
+        Source!.Value= FormatSources((string)Source.Value!);
+        CustomList<ICard> SourceCards= (CustomList<ICard>)Api.GetProperty(context, (string)Source.Value);
+        CustomList<ICard> Targets= new(false, false);
+
+        if((bool)Single!.Value!)
+        {
+            foreach(ICard card in SourceCards.list)
+            {
+                predicate.Unit!.Value= card;
+                if((bool)predicate.Evaluate(null!,null!))
+                {
+                    Targets.Add(card);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            foreach(ICard card in SourceCards.list)
+            {
+                if((bool)predicate.Evaluate(null!,card))
+                {
+                    Targets.Add(card);
+                }
+            }
+        }
+        return Targets;
     }
     public override object Evaluate(EvaluateScope scope,object Set, object Before= null)
     {
@@ -833,18 +857,18 @@ public class BinaryOperator : Expression
             ValueType? tempforOut;
             if(scope == null||!scope.Find(Left, out tempforOut)|| !scope.WithoutReps)
             {
-            Left.Type= Left.Semantic(scope);
-            if(SintaxFacts.AssignableTypes.Contains(Left.Type)){
-            if(Left.Type== Right.Type|| Left.Type== ValueType.UnassignedVar)
-            {
-                Left.Type= Right.Type;
-                if(scope!=null)
-                    scope.AddVar(Left, Right);
-                
-            }
-            else throw new Exception($"Semantic Error at assignment, between {Left.Type} && {Right.Type}");
-            }
-            else throw new Exception($"Semantic Error at assignment, because {Left.Type} is readonly");
+                Left.Type= Left.Semantic(scope);
+                if(SintaxFacts.AssignableTypes.Contains(Left.Type)){
+                    if(Left.Type== Right.Type|| Left.Type== ValueType.UnassignedVar)
+                    {
+                        Left.Type= Right.Type;
+                        if(scope!=null)
+                            scope.AddVar(Left, Right);
+                        
+                    }
+                    else throw new Exception($"Semantic Error at assignment, between {Left.Type} && {Right.Type}");
+                }
+                else throw new Exception($"Semantic Error at assignment, because {Left.Type} is readonly");
             }
             else throw new Exception($"At least two declaration statements");
             Type= Right.Type;
@@ -859,18 +883,23 @@ public class BinaryOperator : Expression
     {
         switch(Operator)
         {
+            // Right.Value= Right.Evaluate(scope, null);
+            // Left.Value= Left.Evaluate(scope, Right.Value);
+            // Value= Left.Value;
+            // EvaluateUtils.ActualizeScope(Left, scope);
+            // return Left.Value;
              //Acums
             case TokenType.PLUSACCUM:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope, Set,Before);
-            Left.Value= (int)Left.Value! + (int)Right.Value;
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            object value= Left.Evaluate(scope, Set,Before);
+            Left.Evaluate(scope,(int)value! + (int)Right.Value);
             this.Value= Left.Value;
             return Left.Value;
 
             case TokenType.MINUSACCUM:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope, Set,Before);
-            Left.Value= (int)Left.Value!- (int)Right.Value;
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope, Set,Before);
+            Left.Value= Left.Evaluate(scope,(int)Left.Value! - (int)Right.Value);
             this.Value= Left.Value;
             return Left.Value;
 
@@ -881,19 +910,19 @@ public class BinaryOperator : Expression
             case TokenType.PLUS:
             Right.Value= (int)Right.Evaluate(scope,Set,Before);
             Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) + (int)Right.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value + (int)Right.Value;
             return this.Value;
 
             case TokenType.MINUS:
             Right.Value= (int)Right.Evaluate(scope,Set,Before);
             Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) - (int)Right.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value - (int)Right.Value;
             return this.Value;
 
             case TokenType.MULTIPLY:
             Right.Value= (int)Right.Evaluate(scope,Set,Before);
             Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) * (int)Right.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value * (int)Right.Value;
             return this.Value;
 
             case TokenType.DIVIDE:
@@ -901,7 +930,7 @@ public class BinaryOperator : Expression
             if((int)Right.Value!=0)
             {
             Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) / (int)Right.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value / (int)Right.Value;
             return this.Value;
             }
             else
@@ -910,74 +939,73 @@ public class BinaryOperator : Expression
             case TokenType.POW:
             Right.Value= (int)Right.Evaluate(scope,Set,Before);
             Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= Math.Pow((int)Left.Evaluate(scope, Set, Before) , (int)Right.Evaluate(scope,Set,Before));
+            this.Value= Math.Pow((int)Left.Value , (int)Right.Value);
             return this.Value;
 
             // Booleans
             case TokenType.EQUAL:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= Left.Evaluate(scope, Set, Before).Equals(Right.Evaluate(scope,Set,Before));
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= Left.Value.Equals(Right.Value);
             return this.Value;
 
             case TokenType.LESS_EQ:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) <= (int)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value <= (int)Right.Value;
             return this.Value;
 
             case TokenType.MORE_EQ:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) >= (int)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value >= (int)Right.Value;
             return this.Value;
 
             case TokenType.MORE:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) > (int)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value > (int)Right.Value;
             return this.Value;
 
             case TokenType.LESS:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (int)Left.Evaluate(scope, Set, Before) < (int)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (int)Left.Value < (int)Right.Value;
             return this.Value;
 
             case TokenType.AND:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (bool)Left.Evaluate(scope, Set, Before) && (bool)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (bool)Left.Value && (bool)Right.Value;
             return this.Value;
 
             case TokenType.OR:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (bool)Left.Evaluate(scope, Set, Before) || (bool)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (bool)Left.Value || (bool)Right.Value;
             return this.Value;
 
             // String   
             case TokenType.CONCATENATION:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (string)Left.Evaluate(scope, Set, Before) + (string)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (string)Left.Value + (string)Right.Value;
             return this.Value;
 
             case TokenType.SPACE_CONCATENATION:
-            Right.Value= (int)Right.Evaluate(scope,Set,Before);
-            Left.Value= (int)Left.Evaluate(scope,Set,Before);
-            this.Value= (string)Left.Evaluate(scope, Set, Before) + " "+ (string)Right.Evaluate(scope,Set,Before);
+            Right.Value= Right.Evaluate(scope,Set,Before);
+            Left.Value= Left.Evaluate(scope,Set,Before);
+            this.Value= (string)Left.Value + " "+ (string)Right.Value;
             return this.Value;
             // Point            
             case TokenType.POINT:
-            Left.Value= Left.Evaluate(scope, Set, Before);
-            Right.Value= Left.Evaluate(scope, Set, Left.Value);
+            Left.Value= Left.Evaluate(scope, null!, Before);
+            Right.Value= Right.Evaluate(scope, Set, Left.Value);
             
-            this.Value= Right.Value;
             return Right.Value;
             //Indexer
             case TokenType.INDEXER:
-            if(Left.Value is List<ICard> list)
+            if(Left.Value is CustomList<ICard> list)
             {
                 Right.Value= (int)Right.Evaluate(scope,Set,Before);
                 if((int)Right.Value< list.Count)
@@ -994,7 +1022,7 @@ public class BinaryOperator : Expression
             case TokenType.TWOPOINT:
             
             Right.Value= Right.Evaluate(scope, null);
-            Left.Value= Left.Evaluate(scope, Right.Value);
+            Left.Evaluate(scope, Right.Value);
             Value= Left.Value;
             return Left.Value;
             
@@ -1056,7 +1084,7 @@ public class UnaryOperator : Terminal
             case TokenType.Remove:
             case TokenType.Push:
             case TokenType.Add:
-            Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, Set));
+            Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, null));
             return null;
             //Player Argument
             case TokenType.HandOfPlayer:
@@ -1064,35 +1092,43 @@ public class UnaryOperator : Terminal
             case TokenType.GraveYardOfPlayer:
             case TokenType.FieldOfPlayer:
             case TokenType.Find:
-            Value= Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, Set));
+            Value= Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, null));
             return Value;
             //Numbers
             case TokenType.RDECREMENT:
-            Value= (int)Operand.Evaluate(scope, Set)-1;
-            return (int)Value+1;
+            Operand.Value= (int)Operand.Evaluate(scope,null)-1;
+            Value= (int)Operand.Value+1;
+            EvaluateUtils.ActualizeScope(Operand, scope);
+            return (int)Value;
             case TokenType.LDECREMENT:
-            Value= (int)Operand.Evaluate(scope, Set)-1;
-            return (int)Value+1;
+            Operand.Value= (int)Operand.Evaluate(scope,null)-1;
+            Value= (int)Operand.Value;
+            EvaluateUtils.ActualizeScope(Operand, scope);
+            return (int)Value;
+            
             case TokenType.RINCREMENT:
-            Value= (int)Operand.Evaluate(scope, Set)+1;
-            return (int)Value-1;
+            Operand.Value= (int)Operand.Evaluate(scope,null)+1;
+            Value= (int)Operand.Value-1;
+            EvaluateUtils.ActualizeScope(Operand, scope);
+            return (int)Value;
+            
             case TokenType.LINCREMENT:
-            Value= (int)Operand.Evaluate(scope, Set)+1;
+            Operand.Value= (int)Operand.Evaluate(scope,null)+1;
+            Value= (int)Operand.Value;
+            EvaluateUtils.ActualizeScope(Operand, scope);
             return (int)Value;
             case TokenType.MINUS:
-            Value= (int)Operand.Evaluate(scope, Set)*-1;
+            Value= (int)Operand.Evaluate(scope, null)*-1;
             return (int)Value-1;
             case TokenType.PLUS:
-            Value= Operand.Evaluate(scope, Set);
+            Value= Operand.Evaluate(scope, null);
             return Value;
             //Boolean
             case TokenType.NOT:
             {
-                Value= Operand.Evaluate(scope, Set);
+                Value= Operand.Evaluate(scope, null);
                 return !(bool)Value;
             }
-            
-            
         }
         if(SintaxFacts.TypeOf.ContainsKey(Operator))
         {
@@ -1162,7 +1198,7 @@ public class UnaryOperator : Terminal
                     throw new Exception("Semantic Error, Expected Boolean Type");
             }
             case TokenType.Find:
-            if(Operand.Semantic(scope)!= ValueType.Predicate)
+            if(Operand!= null && Operand.Semantic(scope)!= ValueType.Predicate)
             {
                 throw new Exception("Semantic Error, Expected Predicate Type");
             }
@@ -1297,11 +1333,26 @@ public class IdentifierExpression : Terminal
                 }
 
         }
-            if(Set!= null)
+        else if(SintaxFacts.PointPosibbles[ValueType.ListCard].Contains(ValueAsToken.Type))
+        {
+            if(Before is CustomList<ICard> list)
             {
-                Value= Set;
-                if(scope!=null)
-                scope.AddVar(this, Value);
+                return Api.GetProperty(list, ValueAsToken.Value);
+            }
+            else
+            throw new Exception("Troubles with List Card Class methods");
+        }
+        
+            else if(Set!= null)
+            {
+                
+                if(Type!= ValueType.Card && Type!= ValueType.Context)
+                {
+                    
+                    Value= Set;
+                    if(scope!=null)
+                    scope.AddVar(this, Value);
+                }
                 return Value;
             }
             else
@@ -1309,12 +1360,13 @@ public class IdentifierExpression : Terminal
                 object value= null;
                 if(ValueAsToken!= null)
                 {
+                    if(scope!=null)
                     scope.Find(this, out value);
                     return value;
                 }
                 else return value;
             }
-            throw new Exception($"Unexpected problems at the identifier: {ValueAsToken}");
+            return null;
     }
 }
 public class StringExpression : Terminal
@@ -1335,5 +1387,4 @@ public class StringExpression : Terminal
     }
 }
 #endregion
-
 

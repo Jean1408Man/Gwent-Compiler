@@ -10,7 +10,7 @@ namespace LogicalSide
         public Semantic(Expression root)
         {
             SintaxFacts.CompilerPhase= "Semantic";
-            root.Semantic(null);
+            root.Semantic(null!);
         }
     }
 }

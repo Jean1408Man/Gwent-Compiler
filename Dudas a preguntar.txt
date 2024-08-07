@@ -1,3 +1,6 @@
 Solo existen predicates que devuelvan cartas?
 PostAction solo contiene un efecto?
-Todos los atributos en cartas son obligatorios
+Todos los atributos en cartas son obligatorios?
+Action es obligatorio?
+Como declaro una carta con los tipos ya existentes?
+estas cartas con tipos ya existentes

@@ -6,24 +6,19 @@ public static class EvaluateUtils
     public static Dictionary<string, List<IdentifierExpression>> ParamsRequiered= new Dictionary<string, List<IdentifierExpression>>();
     public static Dictionary<string, EffectDeclarationExpr> Effects= new Dictionary<string, EffectDeclarationExpr>();
     
-    private static string? NameFinder(List<Expression> expressions)
+    private static string? NameFinder(List<IdentifierExpression> expressions)
     {
         for(int i = 0; i< expressions.Count ; i++)
         {//Its using an effect without params
-            if(expressions[i] is BinaryOperator bin)
+            if(expressions[i] is IdentifierExpression id && (id.ValueAsToken.Type == TokenType.Name|| id.ValueAsToken.Type == TokenType.EFFECTASSIGNMENT))
             {
-                if(bin.Left is IdentifierExpression id && (id.ValueAsToken.Type == TokenType.Name|| id.ValueAsToken.Type == TokenType.EFFECTASSIGNMENT))
-                {
-                    expressions.RemoveAt(i);
-                    return (string)bin.Right.Value;
-                }
+                expressions.RemoveAt(i);
+                return (string)id.Value;
             }
-            else
-            throw new Exception("Unexpected Code Entrance");
         }
         return null;
     }
-    public static EffectDeclarationExpr Finder(List<Expression> expressions)
+    public static EffectDeclarationExpr Finder(List<IdentifierExpression> expressions)
     {
         string? name= NameFinder(expressions);
         if(name== null)
@@ -47,31 +42,31 @@ public static class EvaluateUtils
             if(ex is BinaryOperator bin)
             {
                 if(bin.Left is IdentifierExpression ide)
-                foreach(IdentifierExpression id in Params)
+                foreach(IdentifierExpression id in Values)
                 {
                     if(ide.ValueAsToken.Value== id.ValueAsToken.Value)
                     {
                         ide.Value= id.Value;
                         bin.Value= id.Value;
+                        break;
                     }
                 }
             }
         }
     } 
-    private static bool InternalFinder(List<IdentifierExpression> Declared, List<Expression> Asked)
+    private static bool InternalFinder(List<IdentifierExpression> Declared, List<IdentifierExpression> Asked)
     {
         if(Declared.Count!= Asked.Count)
         {
             throw new Exception($"You must declare exactly {Declared.Count} Params at the effect, you declared {Asked.Count}");
         }
         int conta=0;
-        foreach(Expression ex in Asked)
+        foreach(IdentifierExpression bin in Asked)
         {
-            if(ex is BinaryOperator bin)
-            {
+            
                 foreach(IdentifierExpression id in Declared)
                 {
-                    if(bin.Left.Equals(id))
+                    if(bin.Equals(id))
                     {//Una variable coincide en nombre
                         if(bin.Type== id.Type)
                         {
@@ -83,7 +78,7 @@ public static class EvaluateUtils
                         }
                     }
                 }
-            }
+            
         }
         if(conta== Declared.Count)
              return true;
@@ -92,5 +87,12 @@ public static class EvaluateUtils
             throw new Exception("The params you declared doesnt coincide with the effect");
         }
     } 
-
+    public static void ActualizeScope(Expression expression, EvaluateScope scope)
+    {
+        if(scope!= null)
+        if (expression is IdentifierExpression ide && expression.Type!= ValueType.Card && expression.Type!= ValueType.Context && expression.Type!= ValueType.ListCard)
+        {
+            scope.AddVar(ide, ide.Value);
+        }
+    }
 }

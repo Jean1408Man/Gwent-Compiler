@@ -79,6 +79,31 @@ public class Parser
         {
             position++; 
             returned= new IdentifierExpression(tokens[position - 1]);
+            if(tokens[position].Type == TokenType.INCREMENT || tokens[position].Type == TokenType.DECREMENT)
+            {
+                //Incrementos a la derecha
+                if(tokens[position].Type== TokenType.INCREMENT)
+                    tokens[position].Type= TokenType.RINCREMENT;
+                else
+                    tokens[position].Type= TokenType.RDECREMENT;
+                return new UnaryOperator(returned, tokens[position++]);
+            }
+            else if(tokens[position].Type== TokenType.LBRACKET)
+            {//Indexado
+                Token token = tokens[position];
+                if(tokens[++position].Type== TokenType.RBRACKET)
+                {
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected an Expression to index");
+                }
+                Expression Argument= ParseExpression();
+                if(tokens[position].Type== TokenType.RBRACKET)
+                {
+                    position++;
+                    return new BinaryOperator(returned, Argument, TokenType.INDEXER);
+                }
+                else
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected a Right Bracket to index");
+            }
         }
         
         else if (tokens[position].Type == TokenType.Name || tokens[position].Type == TokenType.Type 
@@ -91,8 +116,32 @@ public class Parser
         {
             position++; 
             returned= new IdentifierExpression(tokens[position - 1]);
+            if(tokens[position].Type == TokenType.INCREMENT || tokens[position].Type == TokenType.DECREMENT)
+            {
+                //Incrementos a la derecha
+                if(tokens[position].Type== TokenType.INCREMENT)
+                    tokens[position].Type= TokenType.RINCREMENT;
+                else
+                    tokens[position].Type= TokenType.RDECREMENT;
+                return new UnaryOperator(returned, tokens[position++]);
+            }
+            else if(tokens[position].Type== TokenType.LBRACKET)
+            {//Indexado
+                Token token = tokens[position];
+                if(tokens[++position].Type== TokenType.RBRACKET)
+                {
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected an Expression to index");
+                }
+                Expression Argument= ParseExpression();
+                if(tokens[position].Type== TokenType.RBRACKET)
+                {
+                    position++;
+                    return new BinaryOperator(returned, Argument, TokenType.INDEXER);
+                }
+                else
+                    throw new Exception($"Invalid Token: {tokens[position]}. Expected a Right Bracket to index");
+            }
         }
-        
         else if (tokens[position].Type == TokenType.STRING)
         {
             position++;
@@ -105,9 +154,7 @@ public class Parser
             returned= new Number(tokens[position - 1]);
         }
         
-        else if ((tokens[position].Type == TokenType.NOT)||(tokens[position].Type == TokenType.PLUS)||(tokens[position].Type == TokenType.MINUS) //&& (position == 0 
-        //|| (tokens[position - 1].Type != TokenType.INT&& tokens[position - 1].Type != TokenType.ID)))
-        )
+        else if ((tokens[position].Type == TokenType.NOT)||(tokens[position].Type == TokenType.PLUS)||(tokens[position].Type == TokenType.MINUS))
         {
             Token unary = tokens[position];
             position++;
@@ -160,39 +207,28 @@ public class Parser
                             returned= new UnaryOperator(argument, token);
                         }
                     }
+                    if(tokens[position].Type== TokenType.LBRACKET)
+                    {//Indexado
+                        token = tokens[position];
+                        if(tokens[++position].Type== TokenType.RBRACKET)
+                        {
+                            throw new Exception($"Invalid Token: {tokens[position]}. Expected an Expression to index");
+                        }
+                        Expression Argument= ParseExpression();
+                        if(tokens[position].Type== TokenType.RBRACKET)
+                        {
+                            position++;
+                            return new BinaryOperator(returned, Argument, TokenType.INDEXER);
+                        }
+                        else
+                            throw new Exception($"Invalid Token: {tokens[position]}. Expected a Right Bracket to index");
+
+                    }
                 }
         #endregion
         else
         throw new Exception($"Invalid Token: {tokens[position]}. Not recognizable primary token");
-        
-        if(tokens[position].Type == TokenType.INCREMENT || tokens[position].Type== TokenType.DECREMENT)
-        {//Incrementos a la derecha
-            if(tokens[position].Type== TokenType.INCREMENT)
-                tokens[position].Type= TokenType.RINCREMENT;
-            else
-                tokens[position].Type= TokenType.RDECREMENT;
-            position++;
-            return new UnaryOperator(returned, tokens[position-1]);
-        }
-        else if(tokens[position].Type== TokenType.LBRACKET)
-        {//Indexado
-            Token token = tokens[position];
-            if(tokens[++position].Type== TokenType.RBRACKET)
-            {
-                throw new Exception($"Invalid Token: {tokens[position]}. Expected an Expression to index");
-            }
-            Expression Argument= ParseExpression();
-            if(tokens[position].Type== TokenType.RBRACKET)
-            {
-                position++;
-                return new BinaryOperator(returned, Argument, TokenType.INDEXER);
-            }
-            else
-                throw new Exception($"Invalid Token: {tokens[position]}. Expected a Right Bracket to index");
-
-        }
-        else return returned;
-
+        return returned;
     }
     #endregion
     private Expression ParseAssignment(bool expectedAssign, bool IsProperty= true)
