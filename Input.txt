@@ -1,23 +1,10 @@
-effect {
-    Name: "Damage",
-    Params: {
-        Amount: Number
-    },
-    Action: (targets, context) => {
-        for target in targets {
-            i = 3;
-            while (i++ < Amount)
-            {
-                target.Power= target.Power + 1;
-            }
-        };
-    }
-}
+
 
 effect {
     Name: "Draw",
     Action: (targets, context) => {
         topCard = context.Deck[0];
+        context.Deck.Add(topCard);
         context.Hand.Add(topCard);
         context.Hand.Shuffle();
     }
@@ -45,23 +32,11 @@ card {
     OnActivation: 
     [
         {
-            Effect: 
-            {
-                Name: "Damage",
-                Amount: 5
-            },
-            Selector: {
+            Effect: "Return to deck",
+        Selector: {
                 Source: "deck",
-                Single: false,
-                Predicate: (unit) => unit.Faction == "Northern" @@ "Realms"
-            },
-            PostAction: {
-                Effect: "Return to deck",
-                Selector: {
-                    Source: "parent",
-                    Single: 3 == 6,
-                    Predicate: (unit) => unit.Power > 0
-                },
+                Single: 3 == 6,
+                Predicate: (unit) => unit.Power > 0
             },
         },
         {

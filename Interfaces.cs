@@ -100,7 +100,9 @@ namespace LogicalSide
 
         void Execute(IContext context)
         {
-            CustomList<ICard> targets= Selector.Execute(context);
+            CustomList<ICard> targets= new(null,null);
+            if(Selector!= null)
+            targets= Selector.Execute(context);
             effect.Execute(context, targets, Params);
         }
     }
@@ -127,7 +129,5 @@ namespace LogicalSide
             return s;
         }
     }
-    
-
 
 }

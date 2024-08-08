@@ -884,9 +884,8 @@ public class BinaryOperator : Expression
         switch(Operator)
         {
             // Right.Value= Right.Evaluate(scope, null);
-            // Left.Value= Left.Evaluate(scope, Right.Value);
+            // Left.Evaluate(scope, Right.Value);
             // Value= Left.Value;
-            // EvaluateUtils.ActualizeScope(Left, scope);
             // return Left.Value;
              //Acums
             case TokenType.PLUSACCUM:
@@ -898,8 +897,8 @@ public class BinaryOperator : Expression
 
             case TokenType.MINUSACCUM:
             Right.Value= Right.Evaluate(scope,Set,Before);
-            Left.Value= Left.Evaluate(scope, Set,Before);
-            Left.Value= Left.Evaluate(scope,(int)Left.Value! - (int)Right.Value);
+            value= Left.Evaluate(scope, Set,Before);
+            Left.Evaluate(scope,(int)value! - (int)Right.Value);
             this.Value= Left.Value;
             return Left.Value;
 
@@ -1005,6 +1004,7 @@ public class BinaryOperator : Expression
             return Right.Value;
             //Indexer
             case TokenType.INDEXER:
+            Left.Value= Left.Evaluate(scope, null!, Before);
             if(Left.Value is CustomList<ICard> list)
             {
                 Right.Value= (int)Right.Evaluate(scope,Set,Before);
@@ -1086,12 +1086,14 @@ public class UnaryOperator : Terminal
             case TokenType.Add:
             Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, null));
             return null;
+
             //Player Argument
             case TokenType.HandOfPlayer:
             case TokenType.DeckOfPlayer:
             case TokenType.GraveYardOfPlayer:
             case TokenType.FieldOfPlayer:
             case TokenType.Find:
+            case TokenType.Pop:
             Value= Api.InvokeMethodWithParameters(Before, Operator.ToString(), Operand.Evaluate(scope, null));
             return Value;
             //Numbers
@@ -1158,6 +1160,8 @@ public class UnaryOperator : Terminal
         switch(Operator)
         {
             //Card Argument
+            case TokenType.Pop:
+            return ValueType.Card;
             case TokenType.SendBottom:
             case TokenType.Remove:
             case TokenType.Push:

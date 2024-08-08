@@ -234,7 +234,8 @@ public class CheckingContext: IContext
         }
         else
         {
-            return OtherDeck;
+        //Here OtherDeck
+            return Deck;
         }
     }
     
